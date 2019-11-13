@@ -32,8 +32,6 @@ freely, subject to the following restrictions:
 #include "soloud.h"
 #include "soloud_thread.h"
 
-#include "brl.mod/blitz.mod/blitz.h"
-
 namespace SoLoud
 {
 	namespace Thread
@@ -42,7 +40,6 @@ namespace SoLoud
         struct ThreadHandleData
         {
             HANDLE thread;
-			BBThread * bbThread;
         };
 
 		void * createMutex()
@@ -104,7 +101,6 @@ namespace SoLoud
             }
             ThreadHandleData *threadHandle = new ThreadHandleData;
             threadHandle->thread = h;
-			threadHandle->bbThread = bbThreadRegister( id );
             return threadHandle;
 		}
 
@@ -120,7 +116,6 @@ namespace SoLoud
 
         void release(ThreadHandle aThreadHandle)
         {
-			bbThreadUnregister(aThreadHandle->bbThread);
             CloseHandle(aThreadHandle->thread);
             delete aThreadHandle;
         }

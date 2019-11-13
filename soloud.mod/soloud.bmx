@@ -45,6 +45,7 @@ ModuleInfo "CC_OPTS: -msse3"
 ?
 ModuleInfo "CC_OPTS: -DWITH_SDL2_STATIC"
 
+Import "file.bmx"
 Import "common.bmx"
 
 
@@ -1405,47 +1406,5 @@ Type TSLAudioAttenuator
 End Type
 
 Type TSLFilter
-End Type
-
-' stream file must be manually freed.
-Type TStreamFile
-
-	Field filePtr:Byte Ptr
-	Field stream:TStream
-	
-	Method Create:TStreamFile(stream:TStream)
-		filePtr = bmx_soloud_streamfile_new(Self)
-		Self.stream = stream
-		stream.Seek(0)
-		Return Self
-	End Method
-	
-	Function _eof:Int(sf:TStreamFile) { nomangle }
-		Return sf.stream.Eof()
-	End Function
-
-	Function _seek(sf:TStreamFile, offset:Int) { nomangle }
-		sf.stream.Seek(offset)
-	End Function
-	
-	Function _length:Int(sf:TStreamFile) { nomangle }
-		Return sf.stream.Size()
-	End Function
-	
-	Function _pos:Int(sf:TStreamFile) { nomangle }
-		Return sf.stream.Pos()
-	End Function
-	
-	Function _read:Int(sf:TStreamFile, dst:Byte Ptr, size:Int) { nomangle }
-		Return sf.stream.Read(dst, size)
-	End Function
-
-	Method Free()
-		If filePtr Then
-			bmx_soloud_streamfile_free(filePtr)
-			filePtr = Null
-		End If
-	End Method
-
 End Type
 
