@@ -205,7 +205,14 @@ Type TSoloudSound Extends TSound
 			sound.destroy()
 		End If
 		
-		sound = audio_loaders.LoadAudioSource(stream)
+		While audio_loaders
+			sound = audio_loaders.LoadAudioSource(stream)
+			If sound Then
+				Return sound
+			End If
+			
+			audio_loaders = audio_loaders._succ
+		Wend
 		
 		Return sound
 		
