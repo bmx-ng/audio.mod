@@ -115,9 +115,9 @@ Type TSoloudSound Extends TSound
 		Local voiceHandle:Int = _driver._soloud.play(_sound, -1, 0, pause)
 
 		If Not allocedChannel Then
-			Return New TSoloudChannel.Create(_driver._soloud, voiceHandle)
+			Return New TSoloudChannel.Create(_driver._soloud, voiceHandle, _sound)
 		Else
-			TSoloudChannel(allocedChannel).Set(_driver._soloud, voiceHandle)
+			TSoloudChannel(allocedChannel).Set(_driver._soloud, voiceHandle, _sound)
 			Return allocedChannel
 		End If
 	End Method
@@ -224,6 +224,8 @@ Type TSoloudChannel Extends TChannel
 
 	Field _soloud:TSoloud
 	Field _voiceHandle:Int
+	
+	Field _sound:TSLAudioSource
 
 	' since we can "alloc" a channel, it won't yet have a _channel object.. which will be added later.
 	' so, any settings changed need to be cached and applied when initialized
@@ -238,16 +240,18 @@ Type TSoloudChannel Extends TChannel
 	Field APPLY_PAN:Int = 4
 	Field APPLY_RATE:Int = 8
 	
-	Method Create:TSoloudChannel(soloud:TSoloud, voiceHandle:Int)
+	Method Create:TSoloudChannel(soloud:TSoloud, voiceHandle:Int, sound:TSLAudioSource)
 		_soloud = soloud
 		_voiceHandle = voiceHandle
+		_sound = sound
 		Return Self
 	End Method
 
 	' - usually applied if this object was created with AllocChannel()
-	Method Set(soloud:TSoloud, voiceHandle:Int)
+	Method Set(soloud:TSoloud, voiceHandle:Int, sound:TSLAudioSource)
 		_soloud = soloud
 		_voiceHandle = voiceHandle
+		_sound = sound
 		
 		If preflags & APPLY_PAUSED Then
 			SetPaused(prePaused)
