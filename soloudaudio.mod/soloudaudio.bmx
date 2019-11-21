@@ -332,9 +332,9 @@ Type TSoloudChannel Extends TChannel
 		End If
 	End Method
 
-	Method StreamTime:Double()
+	Method StreamTime:Int()
 		If _voiceHandle Then
-			Return _soloud.getStreamTime(_voiceHandle)
+			Return Int(_soloud.getStreamTime(_voiceHandle) * 1000)
 		Else
 			Return 0
 		End If
