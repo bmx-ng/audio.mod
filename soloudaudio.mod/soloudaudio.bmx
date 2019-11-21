@@ -331,6 +331,22 @@ Type TSoloudChannel Extends TChannel
 			Return 0
 		End If
 	End Method
+
+	Method StreamTime:Double()
+		If _voiceHandle Then
+			Return _soloud.getStreamTime(_voiceHandle)
+		Else
+			Return 0
+		End If
+	End Method
+	
+	Method LoopCount:Int()
+		If _voiceHandle Then
+			Return _soloud.getLoopCount(_voiceHandle)
+		Else
+			Return 0
+		End If
+	End Method
 	
 End Type
 

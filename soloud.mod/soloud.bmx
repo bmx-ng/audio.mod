@@ -532,6 +532,10 @@ Type TSLAudioSource Abstract
 	Method setInaudibleBehavior(mustTick:Int, kill:Int) Abstract
 	Method setFilter(filterId:Int, filter:TSLFilter) Abstract
 	Method stop() Abstract
+
+	Method getLength:Double()
+		Return -1
+	End Method
 	
 End Type
 
@@ -682,7 +686,7 @@ Type TSLWav Extends TSLLoadableAudioSource
 	Rem
 	bbdoc: 
 	End Rem
-	Method getLength:Double()
+	Method getLength:Double() Override
 		Return Wav_getLength(asPtr)
 	End Method
 	
@@ -843,7 +847,7 @@ Type TSLWavStream Extends TSLLoadableAudioSource
 	Rem
 	bbdoc: 
 	End Rem
-	Method getLength:Double()
+	Method getLength:Double() Override
 		Return WavStream_getLength(asPtr)
 	End Method
 	
