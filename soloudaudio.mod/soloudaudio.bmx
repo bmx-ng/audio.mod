@@ -348,6 +348,14 @@ Type TSoloudChannel Extends TChannel
 		End If
 	End Method
 	
+	Method Length:Int()
+		If _sound Then
+			Return Int(_sound.getLength() * 1000)
+		Else
+			Return -1
+		End If
+	End Method
+	
 End Type
 
 Private
