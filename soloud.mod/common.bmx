@@ -430,3 +430,36 @@ Rem
 bbdoc: Other error
 End Rem
 Const UNKNOWN_ERROR:Int = 7
+
+Rem
+bbdoc: This audio instance loops (if supported)
+end rem
+Const AUDIOSOURCE_LOOPING:Int = 1
+Rem
+bbdoc: This audio instance is protected - won't get stopped if we run out of voices
+end rem
+Const AUDIOSOURCE_PROTECTED:Int = 2
+Rem
+bbdoc: This audio instance is paused
+end rem
+Const AUDIOSOURCE_PAUSED:Int = 4
+Rem
+bbdoc: This audio instance is affected by 3d processing
+end rem
+Const AUDIOSOURCE_PROCESS_3D:Int = 8
+Rem
+bbdoc: This audio instance has listener-relative 3d coordinates
+end rem
+Const AUDIOSOURCE_LISTENER_RELATIVE:Int = 16
+Rem
+bbdoc: Currently inaudible
+end rem
+Const AUDIOSOURCE_INAUDIBLE:Int = 32
+Rem
+bbdoc: If inaudible, should be killed (default = don't kill kill)
+end rem
+Const AUDIOSOURCE_INAUDIBLE_KILL:Int = 64
+Rem
+bbdoc: If inaudible, should still be ticked (default = pause)
+end rem
+Const AUDIOSOURCE_INAUDIBLE_TICK:Int = 128

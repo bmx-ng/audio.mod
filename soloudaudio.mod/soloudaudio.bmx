@@ -51,7 +51,9 @@ Const SOLOUD_SOUND_SFXR:Int =      $00004000
 Const SOLOUD_SOUND_OPENMPT:Int =   $00008000
 Const SOLOUD_SOUND_MONOTONE:Int =  $00010000
 Const SOLOUD_SOUND_TEDSID:Int =    $00020000
-Const SOLOUT_SOUND_SPEECH:Int =    $00040000
+Const SOLOUD_SOUND_SPEECH:Int =    $00040000
+
+Const SOLOUD_SOUND_PAUSE_INAUDIBLE:Int = $10000000
 
 New TSoloudAudioDriver
 
@@ -98,6 +100,7 @@ Type TSoloudSound Extends TSound
 
 	Field _sound:TSLAudioSource
 	Field isLooped:Int
+	Field pauseInaubible:Int
 
 	Method Play:TChannel( allocedChannel:TChannel=Null )
 		Return StartSound(allocedChannel, False)
@@ -112,6 +115,10 @@ Type TSoloudSound Extends TSound
 			_sound.SetLooping(True)
 		End If
 
+		If Not pauseInaubible
+			_sound.setInaudibleBehavior(True, False)
+		End If
+
 		Local voiceHandle:Int = _driver._soloud.play(_sound, -1, 0, pause)
 
 		If Not allocedChannel Then
@@ -124,7 +131,7 @@ Type TSoloudSound Extends TSound
 	
 	Function Load:TSound( url:Object, loopFlag:Int )
 
-		If loopFlag & SOLOUT_SOUND_SPEECH Then
+		If loopFlag & SOLOUD_SOUND_SPEECH Then
 			Local this:TSoloudSound = New TSoloudSound
 			this._sound = New TSLSpeech
 			TSLSpeech(this._sound).SetText(String(url))
@@ -157,6 +164,10 @@ Type TSoloudSound Extends TSound
 
 		If loopFlag & SOUND_LOOP Then
 			this.isLooped = True
+		End If
+		
+		If loopFlag & SOLOUD_SOUND_PAUSE_INAUDIBLE Then
+			this.pauseInaubible = True
 		End If
 
 		Local stream:TStream
