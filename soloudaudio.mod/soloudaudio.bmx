@@ -100,7 +100,7 @@ Type TSoloudSound Extends TSound
 
 	Field _sound:TSLAudioSource
 	Field isLooped:Int
-	Field pauseInaubible:Int
+	Field pauseInaudible:Int
 
 	Method Play:TChannel( allocedChannel:TChannel=Null )
 		Return StartSound(allocedChannel, False)
@@ -115,7 +115,7 @@ Type TSoloudSound Extends TSound
 			_sound.SetLooping(True)
 		End If
 
-		If Not pauseInaubible
+		If Not pauseInaudible
 			_sound.setInaudibleBehavior(True, False)
 		End If
 
@@ -167,7 +167,7 @@ Type TSoloudSound Extends TSound
 		End If
 		
 		If loopFlag & SOLOUD_SOUND_PAUSE_INAUDIBLE Then
-			this.pauseInaubible = True
+			this.pauseInaudible = True
 		End If
 
 		Local stream:TStream
