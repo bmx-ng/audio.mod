@@ -119,14 +119,21 @@ Type TSoloudSound Extends TSound
 			_sound.setInaudibleBehavior(True, False)
 		End If
 
-		Local voiceHandle:Int = _driver._soloud.play(_sound, -1, 0, pause)
+		Local voiceHandle:Int = _driver._soloud.play(_sound, -1, 0, True)
 
+		Local channel:TChannel
 		If Not allocedChannel Then
-			Return New TSoloudChannel.Create(_driver._soloud, voiceHandle, _sound)
+			channel = New TSoloudChannel.Create(_driver._soloud, voiceHandle, _sound)
 		Else
 			TSoloudChannel(allocedChannel).Set(_driver._soloud, voiceHandle, _sound)
-			Return allocedChannel
+			channel = allocedChannel
 		End If
+		
+		If Not pause Then
+			channel.SetPaused(False)
+		End If
+		
+		Return channel
 	End Method
 	
 	Function Load:TSound( url:Object, loopFlag:Int )
@@ -299,19 +306,17 @@ Type TSoloudChannel Extends TChannel
 	Method SetVolume( volume:Float ) Override
 		If _voiceHandle Then
 			_soloud.setVolume(_voiceHandle, volume)
-		Else
-			preflags:| APPLY_VOLUME
-			preVolume = volume
 		End If
+		preflags:| APPLY_VOLUME
+		preVolume = volume
 	End Method
 
 	Method SetPan( pan:Float ) Override
 		If _voiceHandle Then
 			_soloud.setPan(_voiceHandle, pan)
-		Else
-			preflags:| APPLY_PAN
-			prePan = pan
 		End If
+		preflags:| APPLY_PAN
+		prePan = pan
 	End Method
 
 	Method SetDepth( depth:Float ) Override
@@ -321,10 +326,9 @@ Type TSoloudChannel Extends TChannel
 	Method SetRate( rate:Float ) Override
 		If _voiceHandle Then
 			_soloud.setSamplerate(_voiceHandle, rate)
-		Else
-			preflags:| APPLY_RATE
-			preRate = rate
 		End If
+		preflags:| APPLY_RATE
+		preRate = rate
 	End Method
 
 	Method Playing:Int() Override
