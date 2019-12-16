@@ -48,6 +48,7 @@ ModuleInfo "CC_OPTS: -DWITH_SDL2_STATIC"
 Import "file.bmx"
 Import "common.bmx"
 
+SDL_InitSubSystem(SDL_INIT_AUDIO)
 
 Rem
 bbdoc: 
