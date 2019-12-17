@@ -55,8 +55,6 @@ Const SOLOUD_SOUND_SPEECH:Int =    $00040000
 
 Const SOLOUD_SOUND_PAUSE_INAUDIBLE:Int = $10000000
 
-New TSoloudAudioDriver
-
 Type TSoloudAudioDriver Extends TAudioDriver
 
 	Field _soloud:TSoloud
@@ -95,6 +93,109 @@ Type TSoloudAudioDriver Extends TAudioDriver
 	End Method
 
 End Type
+
+?win32
+New TDirectSoundSoloudAudioDriver
+New TWinmMMSoloudAudioDriver
+
+Type TDirectSoundSoloudAudioDriver Extends TSoloudAudioDriver
+
+	Method Name$()
+		Return "SoLoud::DirectSound"
+	End Method
+
+	Method Startup:Int()
+		SDLAudioInit("directsound")
+		Return Super.Startup()
+	End Method
+	
+End Type
+
+Type TWinmMMSoloudAudioDriver Extends TSoloudAudioDriver
+
+	Method Name$()
+		Return "SoLoud::WinMM"
+	End Method
+
+	Method Startup:Int()
+		SDLAudioInit("winmm")
+		Return Super.Startup()
+	End Method
+	
+End Type
+?linux
+New TALSASoloudAudioDriver
+New TPulseAudioSoloudAudioDriver
+New TOSSSoloudAudioDriver
+New TNASSoloudAudioDriver
+
+Type TALSASoloudAudioDriver Extends TSoloudAudioDriver
+
+	Method Name$()
+		Return "SoLoud::ALSA"
+	End Method
+
+	Method Startup:Int()
+		SDLAudioInit("alsa")
+		Return Super.Startup()
+	End Method
+	
+End Type
+
+Type TPulseAudioSoloudAudioDriver Extends TSoloudAudioDriver
+
+	Method Name$()
+		Return "SoLoud::PulseAudio"
+	End Method
+
+	Method Startup:Int()
+		SDLAudioInit("pulseaudio")
+		Return Super.Startup()
+	End Method
+	
+End Type
+
+Type TOSSSoloudAudioDriver Extends TSoloudAudioDriver
+
+	Method Name$()
+		Return "SoLoud::OSS"
+	End Method
+
+	Method Startup:Int()
+		SDLAudioInit("dsp")
+		Return Super.Startup()
+	End Method
+	
+End Type
+
+Type TNASSoloudAudioDriver Extends TSoloudAudioDriver
+
+	Method Name$()
+		Return "SoLoud::NAS"
+	End Method
+
+	Method Startup:Int()
+		SDLAudioInit("nas")
+		Return Super.Startup()
+	End Method
+	
+End Type
+?macos
+New TCoreAudioSoloudAudioDriver
+
+Type TCoreAudioSoloudAudioDriver Extends TSoloudAudioDriver
+
+	Method Name$()
+		Return "SoLoud::CoreAudio"
+	End Method
+
+	Method Startup:Int()
+		SDLAudioInit("coreaudio")
+		Return Super.Startup()
+	End Method
+	
+End Type
+?
 
 Type TSoloudSound Extends TSound
 
