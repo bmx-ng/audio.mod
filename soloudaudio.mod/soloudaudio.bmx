@@ -54,6 +54,7 @@ Const SOLOUD_SOUND_TEDSID:Int =    $00020000
 Const SOLOUD_SOUND_SPEECH:Int =    $00040000
 
 Const SOLOUD_SOUND_PAUSE_INAUDIBLE:Int = $10000000
+Const SOLOUD_SOUND_PROTECT:Int = $20000000
 
 Type TSoloudAudioDriver Extends TAudioDriver
 
@@ -202,6 +203,7 @@ Type TSoloudSound Extends TSound
 	Field _sound:TSLAudioSource
 	Field isLooped:Int
 	Field pauseInaudible:Int
+	Field isProtected:Int
 
 	Method Play:TChannel( allocedChannel:TChannel=Null )
 		Return StartSound(allocedChannel, False)
@@ -228,6 +230,10 @@ Type TSoloudSound Extends TSound
 		Else
 			TSoloudChannel(allocedChannel).Set(_driver._soloud, voiceHandle, _sound)
 			channel = allocedChannel
+		End If
+
+		If isProtected Then
+			TSoloudChannel(channel).SetProtected(isProtected)
 		End If
 		
 		If Not pause Then
@@ -472,6 +478,11 @@ Type TSoloudChannel Extends TChannel
 		End If
 	End Method
 	
+	Method SetProtected(protect:Int)
+		If _voiceHandle Then
+			_soloud.setProtectVoice(_voiceHandle, protect)
+		End If
+	End Method
 End Type
 
 Private
