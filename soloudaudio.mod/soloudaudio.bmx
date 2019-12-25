@@ -98,6 +98,7 @@ End Type
 ?win32
 New TDirectSoundSoloudAudioDriver
 New TWinmMMSoloudAudioDriver
+New TDefaultSoloudAudioDriver
 
 Type TDirectSoundSoloudAudioDriver Extends TSoloudAudioDriver
 
@@ -124,11 +125,20 @@ Type TWinmMMSoloudAudioDriver Extends TSoloudAudioDriver
 	End Method
 	
 End Type
+
+Type TDefaultSoloudAudioDriver Extends TDirectSoundSoloudAudioDriver
+
+	Method Name$()
+		Return "SoLoud"
+	End Method
+
+End Type
 ?linux
 New TALSASoloudAudioDriver
 New TPulseAudioSoloudAudioDriver
 New TOSSSoloudAudioDriver
 New TNASSoloudAudioDriver
+New TDefaultSoloudAudioDriver
 
 Type TALSASoloudAudioDriver Extends TSoloudAudioDriver
 
@@ -181,8 +191,17 @@ Type TNASSoloudAudioDriver Extends TSoloudAudioDriver
 	End Method
 	
 End Type
+
+Type TDefaultSoloudAudioDriver Extends TPulseAudioSoloudAudioDriver
+
+	Method Name$()
+		Return "SoLoud"
+	End Method
+
+End Type
 ?macos
 New TCoreAudioSoloudAudioDriver
+New TDefaultSoloudAudioDriver
 
 Type TCoreAudioSoloudAudioDriver Extends TSoloudAudioDriver
 
@@ -195,6 +214,14 @@ Type TCoreAudioSoloudAudioDriver Extends TSoloudAudioDriver
 		Return Super.Startup()
 	End Method
 	
+End Type
+
+Type TDefaultSoloudAudioDriver Extends TCoreAudioSoloudAudioDriver
+
+	Method Name$()
+		Return "SoLoud"
+	End Method
+
 End Type
 ?
 
