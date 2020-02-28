@@ -1,4 +1,4 @@
-' Copyright (c) 2016-2019 Bruce A Henderson
+' Copyright (c) 2016-2020 Bruce A Henderson
 '
 ' This software is provided 'as-is', without any express or implied
 ' warranty. In no event will the authors be held liable for any damages
@@ -22,7 +22,6 @@
 SuperStrict
 
 Import BRL.Stream
-Import SDL.SDL
 
 Import "source.bmx"
 
@@ -86,7 +85,7 @@ Extern
 	Function Soloud_setSamplerate(aSoloud:Byte Ptr, aVoiceHandle:Int, aSamplerate:Float)
 	Function Soloud_setPan(aSoloud:Byte Ptr, aVoiceHandle:Int, aPan:Float)
 	Function Soloud_setPanAbsolute(aSoloud:Byte Ptr, aVoiceHandle:Int, aLVolume:Float, aRVolume:Float)
-	Function Soloud_setPanAbsoluteEx(aSoloud:Byte Ptr, aVoiceHandle:Int, aLVolume:Float, aRVolume:Float, aLBVolume:Float, aRBVolume:Float, aCVolume:Float, aSVolume:Float)
+	Function Soloud_setChannelVolume(aSoloud:Byte Ptr, aVoiceHandle:Int, channel:Int, volume:Float)
 	Function Soloud_setVolume(aSoloud:Byte Ptr, aVoiceHandle:Int, aVolume:Float)
 	Function Soloud_setDelaySamples(aSoloud:Byte Ptr, aVoiceHandle:Int, aSamples:Int)
 	Function Soloud_fadeVolume(aSoloud:Byte Ptr, aVoiceHandle:Int, aTo:Float, aTime:Double)
@@ -347,19 +346,23 @@ End Extern
 
 
 Const SOLOUD_AUTO:Int = 0
-Const SOLOUD_SDL:Int = 1
+Const SOLOUD_SDL1:Int = 1
 Const SOLOUD_SDL2:Int = 2
 Const SOLOUD_PORTAUDIO:Int = 3
 Const SOLOUD_WINMM:Int = 4
 Const SOLOUD_XAUDIO2:Int = 5
 Const SOLOUD_WASAPI:Int = 6
 Const SOLOUD_ALSA:Int = 7
-Const SOLOUD_OSS:Int = 8
-Const SOLOUD_OPENAL:Int = 9
-Const SOLOUD_COREAUDIO:Int = 10
-Const SOLOUD_OPENSLES:Int = 11
-Const SOLOUD_NULLDRIVER:Int = 12
-Const SOLOUD_BACKEND_MAX:Int = 13
+Const SOLOUD_JACK:Int = 8
+Const SOLOUD_OSS:Int = 9
+Const SOLOUD_OPENAL:Int = 10
+Const SOLOUD_COREAUDIO:Int = 11
+Const SOLOUD_OPENSLES:Int = 12
+Const SOLOUD_VITA_HOMEBREW:Int = 13
+Const SOLOUD_MINIAUDIO:Int = 14
+Const SOLOUD_NOSOUND:Int = 15
+Const SOLOUD_NULLDRIVER:Int = 16
+Const SOLOUD_BACKEND_MAX:Int = 17
 
 Const SOLOUD_CLIP_ROUNDOFF:Int = 1
 Const SOLOUD_ENABLE_VISUALIZATION:Int = 2

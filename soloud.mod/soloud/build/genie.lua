@@ -8,9 +8,12 @@ local WITH_XAUDIO2 = 0
 local WITH_WINMM = 0
 local WITH_WASAPI = 0
 local WITH_ALSA = 0
+local WITH_JACK = 0
 local WITH_OSS = 0
 local WITH_COREAUDIO = 0
 local WITH_VITA_HOMEBREW = 0
+local WITH_NOSOUND = 0
+local WITH_MINIAUDIO = 0
 local WITH_NULL = 1
 local WITH_TOOLS = 0
 
@@ -126,6 +129,31 @@ newoption {
 	description = "Shorthand for options used while developing SoLoud"
 }
 
+newoption {
+	trigger		  = "with-nosound",
+	description = "Include nosound backend in build"
+}
+
+newoption {
+	trigger		  = "with-jack",
+	description = "Include JACK backend in build"
+}
+
+newoption {
+	trigger		  = "with-jack-only",
+	description = "Only include JACK backend in build"
+}
+
+newoption {
+    trigger       = "with-miniaudio",
+    description = "Include MiniAudio in build" 
+}
+
+newoption {
+    trigger       = "with-miniaudio-only",
+    description = "Only include MiniAudio in build"
+}
+
 if _OPTIONS["soloud-devel"] then
     WITH_SDL = 0
     WITH_SDL2 = 1
@@ -136,7 +164,9 @@ if _OPTIONS["soloud-devel"] then
     WITH_XAUDIO2 = 0
     WITH_WINMM = 0
     WITH_WASAPI = 0
+    WITH_MINIAUDIO = 1
     WITH_OSS = 1
+    WITH_NOSOUND = 1
     if (os.is("Windows")) then
     	WITH_XAUDIO2 = 0
     	WITH_WINMM = 1
@@ -156,6 +186,8 @@ if _OPTIONS["with-common-backends"] then
     WITH_WINMM = 0
     WITH_WASAPI = 0
     WITH_OSS = 1
+    WITH_NOSOUND = 1
+    WITH_MINIAUDIO = 0
 
     if (os.is("Windows")) then
     	WITH_XAUDIO2 = 0
@@ -186,11 +218,15 @@ if _OPTIONS["with-sdl"] then
 end
 
 if _OPTIONS["with-sdl2"] then
-	WITH_SDL = 1
+	WITH_SDL2 = 1
 end
 
 if _OPTIONS["with-wasapi"] then
 	WITH_WASAPI = 1
+end
+
+if _OPTIONS["with-nosound"] then
+    WITH_NOSOUND = 1
 end
 
 if _OPTIONS["with-sdl-only"] then
@@ -204,6 +240,8 @@ if _OPTIONS["with-sdl-only"] then
 	WITH_WINMM = 0
 	WITH_WASAPI = 0
 	WITH_OSS = 0
+	WITH_NOSOUND = 0
+	WITH_MINIAUDIO = 0
 end
 
 if _OPTIONS["with-sdl2-only"] then
@@ -217,6 +255,8 @@ if _OPTIONS["with-sdl2-only"] then
 	WITH_WINMM = 0
 	WITH_WASAPI = 0
 	WITH_OSS = 0
+	WITH_NOSOUND = 0
+	WITH_MINIAUDIO = 0
 end
 
 if _OPTIONS["with-sdlstatic-only"] then
@@ -229,6 +269,8 @@ if _OPTIONS["with-sdlstatic-only"] then
 	WITH_WINMM = 0
 	WITH_WASAPI = 0
 	WITH_OSS = 0
+	WITH_NOSOUND = 0
+	WITH_MINIAUDIO = 0
 end
 
 if _OPTIONS["with-sdl2static-only"] then
@@ -242,6 +284,8 @@ if _OPTIONS["with-sdl2static-only"] then
 	WITH_WINMM = 0
 	WITH_WASAPI = 0
 	WITH_OSS = 0
+	WITH_NOSOUND = 0
+	WITH_MINIAUDIO = 0
 end
 
 if _OPTIONS["with-sdl2static-only"] then
@@ -255,6 +299,8 @@ if _OPTIONS["with-sdl2static-only"] then
 	WITH_WINMM = 0
 	WITH_WASAPI = 0
 	WITH_OSS = 0
+	WITH_NOSOUND = 0
+	WITH_MINIAUDIO = 0
 end
 
 if _OPTIONS["with-vita-homebrew-only"] then
@@ -270,10 +316,58 @@ if _OPTIONS["with-vita-homebrew-only"] then
 	WITH_OSS = 0
 	WITH_ALSA = 0
 	WITH_VITA_HOMEBREW = 1
+	WITH_NOSOUND = 0
+	WITH_MINIAUDIO = 0
 
 	premake.gcc.cc = "arm-vita-eabi-gcc"
 	premake.gcc.cxx = "arm-vita-eabi-g++"
 	premake.gcc.ar = "arm-vita-eabi-ar"
+end
+
+if _OPTIONS["with-jack"] then
+	WITH_JACK = 1
+end
+
+if _OPTIONS["with-jack-only"] then
+	WITH_SDL = 0
+	WITH_SDL2 = 0
+	WITH_SDL_STATIC = 0
+	WITH_SDL2_STATIC = 0
+	WITH_PORTAUDIO = 0
+	WITH_OPENAL = 0
+	WITH_XAUDIO2 = 0
+	WITH_WINMM = 0
+	WITH_WASAPI = 0
+	WITH_OSS = 0
+	WITH_ALSA = 0
+	WITH_VITA_HOMEBREW = 0
+	WITH_COREAUDIO = 0
+	WITH_JACK = 1
+	WITH_NOSOUND = 0
+	WITH_MINIAUDIO = 0
+end
+
+if _OPTIONS["with-miniaudio"] then
+    WITH_MINIAUDIO = 1
+end
+
+if _OPTIONS["with-miniaudio-only"] then
+	WITH_SDL = 0
+	WITH_SDL2 = 0
+	WITH_SDL_STATIC = 0
+	WITH_SDL2_STATIC = 0
+	WITH_PORTAUDIO = 0
+	WITH_OPENAL = 0
+	WITH_XAUDIO2 = 0
+	WITH_WINMM = 0
+	WITH_WASAPI = 0
+	WITH_OSS = 0
+	WITH_ALSA = 0
+	WITH_VITA_HOMEBREW = 0
+	WITH_COREAUDIO = 0
+	WITH_JACK = 0
+	WITH_NOSOUND = 0
+	WITH_MINIAUDIO = 1
 end
 
 if _OPTIONS["with-native-only"] then
@@ -287,6 +381,8 @@ if _OPTIONS["with-native-only"] then
 	WITH_WINMM = 0
 	WITH_WASAPI = 0
 	WITH_OSS = 0
+	WITH_MINIAUDIO = 0
+	WITH_NOSOUND = 0
 	if (os.is("Windows")) then
 		WITH_WINMM = 1
 	elseif (os.is("macosx")) then
@@ -310,7 +406,10 @@ print ("WITH_XAUDIO2    = ", WITH_XAUDIO2)
 print ("WITH_WINMM      = ", WITH_WINMM)
 print ("WITH_WASAPI     = ", WITH_WASAPI)
 print ("WITH_ALSA       = ", WITH_ALSA)
+print ("WITH_JACK       = ", WITH_JACK)
 print ("WITH_OSS        = ", WITH_OSS)
+print ("WITH_MINIAUDIO  = ", WITH_MINIAUDIO)
+print ("WITH_NOSOUND    = ", WITH_NOSOUND)
 print ("WITH_COREAUDIO  = ", WITH_COREAUDIO)
 print ("WITH_VITA_HOMEBREW = ", WITH_VITA_HOMEBREW)
 print ("WITH_TOOLS      = ", WITH_TOOLS)
@@ -374,6 +473,9 @@ end
 if (WITH_ALSA == 1) then
 	links {"asound"}
 end
+if (WITH_JACK == 1) then
+	links { "jack" }
+end
 if (WITH_COREAUDIO == 1) then
 	links {"AudioToolbox.framework"}
 end
@@ -400,6 +502,9 @@ end
 if (WITH_ALSA == 1) then
 	links {"asound"}
 end
+if (WITH_JACK == 1) then
+	links { "jack" }
+end
 if (WITH_COREAUDIO == 1) then
 	links {"AudioToolbox.framework"}
 end
@@ -425,6 +530,9 @@ end
 	}
 if (WITH_ALSA == 1) then
 	links {"asound"}
+end
+if (WITH_JACK == 1) then
+	links { "jack" }
 end
 if (WITH_COREAUDIO == 1) then
 	links {"AudioToolbox.framework"}
@@ -453,6 +561,9 @@ end
 if (WITH_ALSA == 1) then
 	links {"asound"}
 end
+if (WITH_JACK == 1) then
+	links { "jack" }
+end
 if (WITH_COREAUDIO == 1) then
 	links {"AudioToolbox.framework"}
 end
@@ -467,7 +578,7 @@ end
 
 -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< -- 8< --
 
-if (WITH_SDL2 == 1) then
+if (WITH_SDL2 == 1 or WITH_SDL2STATIC) then
 
 	project "SoloudDemoCommon"
 		kind "StaticLib"
@@ -534,6 +645,26 @@ if (WITH_OSS == 1) then
 	defines {"WITH_OSS"}
 	files {
 	  "../src/backend/oss/**.c*"
+	  }
+	includedirs {
+	  "../include"
+	}
+end
+
+if (WITH_MINIAUDIO == 1) then
+	defines {"WITH_MINIAUDIO"}
+	files {
+	  "../src/backend/miniaudio/**.c*"
+	  }
+	includedirs {
+	  "../include"
+	}
+end
+
+if (WITH_NOSOUND == 1) then
+	defines {"WITH_NOSOUND"}
+	files {
+	  "../src/backend/nosound/**.c*"
 	  }
 	includedirs {
 	  "../include"
@@ -647,6 +778,18 @@ if (WITH_VITA_HOMEBREW == 1) then
 	}
 end
 
+
+if (WITH_JACK == 1) then
+	defines { "WITH_JACK" }
+	links { "jack" }
+	files {
+	  "../src/backend/jack/**.c*"
+	  }
+	includedirs {
+	  "../include"
+	}
+end
+
 if (WITH_NULL == 1) then
     defines { "WITH_NULL" }
 	files {
@@ -673,6 +816,9 @@ if (WITH_TOOLS == 1) then
 		}
 		if (WITH_ALSA == 1) then
 			links {"asound"}
+		end
+		if (WITH_JACK == 1) then
+			links { "jack" }
 		end
 		if (WITH_COREAUDIO == 1) then
 			links {"AudioToolbox.framework"}
@@ -762,6 +908,9 @@ end
 if (WITH_ALSA == 1) then
 	links {"asound"}
 end
+if (WITH_JACK == 1) then
+	links { "jack" }
+end
 if (WITH_COREAUDIO == 1) then
 	links {"AudioToolbox.framework"}
 end
@@ -802,7 +951,7 @@ end
 --  The rest of the projects require SDL
 --
 
-if (WITH_SDL2 == 1) then
+if (WITH_SDL2 == 1 or WITH_SDL2STATIC) then
 
 function sdl2_lib()
     configuration { "x32" } 
@@ -832,6 +981,9 @@ function CommonDemo(_name)
 
 if (WITH_ALSA == 1) then
 	links {"asound"}
+end
+if (WITH_JACK == 1) then
+	links { "jack" }
 end
 if (WITH_COREAUDIO == 1) then
 	links {"AudioToolbox.framework"}
@@ -878,6 +1030,9 @@ end
 
 if (WITH_ALSA == 1) then
 	links {"asound"}
+end
+if (WITH_JACK == 1) then
+	links { "jack" }
 end
 if (WITH_COREAUDIO == 1) then
 	links {"AudioToolbox.framework"}

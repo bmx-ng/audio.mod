@@ -1,6 +1,6 @@
 /*
 SoLoud audio engine
-Copyright (c) 2013-2016 Jari Komppa
+Copyright (c) 2013-2020 Jari Komppa
 
 This software is provided 'as-is', without any express or implied
 warranty. In no event will the authors be held liable for any damages
@@ -22,7 +22,7 @@ freely, subject to the following restrictions:
    distribution.
 */
 
-/* SoLoud C-Api Code Generator (c)2013-2018 Jari Komppa http://iki.fi/sol/ */
+/* SoLoud C-Api Code Generator (c)2013-2020 Jari Komppa http://iki.fi/sol/ */
 
 #include "../soloud.mod/soloud/src/../include/soloud.h"
 #include "../soloud.mod/soloud/src/../include/soloud_audiosource.h"
@@ -49,13 +49,13 @@ int Openmpt_load(void * aClassPtr, const char * aFilename)
 	return cl->load(aFilename);
 }
 
-int Openmpt_loadMem(void * aClassPtr, unsigned char * aMem, unsigned int aLength)
+int Openmpt_loadMem(void * aClassPtr, const unsigned char * aMem, unsigned int aLength)
 {
 	Openmpt * cl = (Openmpt *)aClassPtr;
 	return cl->loadMem(aMem, aLength);
 }
 
-int Openmpt_loadMemEx(void * aClassPtr, unsigned char * aMem, unsigned int aLength, int aCopy, int aTakeOwnership)
+int Openmpt_loadMemEx(void * aClassPtr, const unsigned char * aMem, unsigned int aLength, int aCopy, int aTakeOwnership)
 {
 	Openmpt * cl = (Openmpt *)aClassPtr;
 	return cl->loadMem(aMem, aLength, !!aCopy, !!aTakeOwnership);

@@ -25,8 +25,10 @@ freely, subject to the following restrictions:
 #if defined(_WIN32)||defined(_WIN64)
 #include <windows.h>
 #else
+#include <inttypes.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <time.h>
 #endif
 
 #include "soloud.h"
@@ -93,8 +95,7 @@ namespace SoLoud
 			soloud_thread_data *d = new soloud_thread_data;
 			d->mFunc = aThreadFunction;
 			d->mParam = aParameter;
-			DWORD id;
-			HANDLE h = CreateThread(NULL,0,threadfunc,d,0,&id);
+			HANDLE h = CreateThread(NULL,0,threadfunc,d,0,NULL);
             if (0 == h)
             {
                 return 0;
@@ -119,6 +120,11 @@ namespace SoLoud
             CloseHandle(aThreadHandle->thread);
             delete aThreadHandle;
         }
+
+		int getTimeMillis()
+		{
+			return GetTickCount();
+		}
 
 #else // pthreads
         struct ThreadHandleData
@@ -211,6 +217,13 @@ namespace SoLoud
         {
             delete aThreadHandle;
         }
+
+		int getTimeMillis()
+		{
+			struct timespec spec;
+			clock_gettime(CLOCK_REALTIME, &spec);
+			return spec.tv_sec * 1000 + (int)(spec.tv_nsec / 1.0e6);
+		}
 #endif
 
 		static void poolWorker(void *aParam)
@@ -238,6 +251,8 @@ namespace SoLoud
 			mWorkMutex = 0;
 			mRobin = 0;
 			mMaxTask = 0;
+			for (int i = 0; i < MAX_THREADPOOL_TASKS; i++)
+				mTaskArray[i] = 0;
 		}
 
 		Pool::~Pool()

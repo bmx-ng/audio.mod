@@ -37,11 +37,7 @@ namespace SoLoud
 
 #else
 
-#if defined(_MSC_VER)
-#include <SDL.h>
-#else
-#include <SDL2/SDL.h>
-#endif
+#include "SDL.h"
 #include <math.h>
 
 
@@ -69,21 +65,20 @@ namespace SoLoud
 
 	void soloud_sdl2_audiomixer(void *userdata, Uint8 *stream, int len)
 	{
-		short *buf = (short*)stream;
 		SoLoud::Soloud *soloud = (SoLoud::Soloud *)userdata;
 		if (gActiveAudioSpec.format == AUDIO_F32)
 		{
 			int samples = len / (gActiveAudioSpec.channels * sizeof(float));
-			soloud->mix((float *)buf, samples);
+			soloud->mix((float *)stream, samples);
 		}
 		else // assume s16 if not float
 		{
 			int samples = len / (gActiveAudioSpec.channels * sizeof(short));
-			soloud->mixSigned16(buf, samples);
+			soloud->mixSigned16((short *)stream, samples);
 		}
 	}
 
-	static void soloud_sdl2_deinit(SoLoud::Soloud *aSoloud)
+	static void soloud_sdl2_deinit(SoLoud::Soloud * /*aSoloud*/)
 	{
 		dll_SDL2_CloseAudioDevice(gAudioDeviceID);
 	}
@@ -104,8 +99,8 @@ namespace SoLoud
 		SDL_AudioSpec as;
 		as.freq = aSamplerate;
 		as.format = AUDIO_F32;
-		as.channels = aChannels;
-		as.samples = aBuffer;
+		as.channels = (Uint8)aChannels;
+		as.samples = (Uint16)aBuffer;
 		as.callback = soloud_sdl2_audiomixer;
 		as.userdata = (void*)aSoloud;
 
@@ -120,7 +115,7 @@ namespace SoLoud
 			}
 		}
 
-		aSoloud->postinit(gActiveAudioSpec.freq, gActiveAudioSpec.samples, aFlags, gActiveAudioSpec.channels);
+		aSoloud->postinit_internal(gActiveAudioSpec.freq, gActiveAudioSpec.samples, aFlags, gActiveAudioSpec.channels);
 
 		aSoloud->mBackendCleanupFunc = soloud_sdl2_deinit;
 

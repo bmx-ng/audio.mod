@@ -95,7 +95,7 @@ namespace SoLoud
 	{
 		drwav decoder;
 
-		if (!drwav_init_memory(&decoder, aReader->getMemPtr(), aReader->length()))
+		if (!drwav_init_memory(&decoder, aReader->getMemPtr(), aReader->length(),NULL))
 		{
 			return FILE_LOAD_FAILED;
 		}
@@ -182,7 +182,7 @@ namespace SoLoud
 	{
 		drmp3 decoder;
 
-		if (!drmp3_init_memory(&decoder, aReader->getMemPtr(), aReader->length(), NULL))
+		if (!drmp3_init_memory(&decoder, aReader->getMemPtr(), aReader->length(), NULL, NULL))
 		{
 			return FILE_LOAD_FAILED;
 		}
@@ -222,14 +222,14 @@ namespace SoLoud
 
 	result Wav::loadflac(MemoryFile *aReader)
 	{
-		drflac *decoder = drflac_open_memory(aReader->mDataPtr, aReader->mDataLength);
+		drflac *decoder = drflac_open_memory(aReader->mDataPtr, aReader->mDataLength, NULL);
 
 		if (!decoder)
 		{
 			return FILE_LOAD_FAILED;
 		}
 
-		drflac_uint64 samples = decoder->totalSampleCount;
+		drflac_uint64 samples = decoder->totalPCMFrameCount;
 
 		if (!samples)
 		{
@@ -302,7 +302,7 @@ namespace SoLoud
 		return res;
 	}
 
-	result Wav::loadMem(unsigned char *aMem, unsigned int aLength, bool aCopy, bool aTakeOwnership)
+	result Wav::loadMem(const unsigned char *aMem, unsigned int aLength, bool aCopy, bool aTakeOwnership)
 	{
 		if (aMem == NULL || aLength == 0)
 			return INVALID_PARAMETER;

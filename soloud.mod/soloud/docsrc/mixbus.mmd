@@ -28,6 +28,10 @@ To play a stream through the mixing bus, use the bus play() command.
     int fxhandle = gBus.play(gSoundEffect); // Play sound effect through bus
     gSoloud.setVolume(fxhandle, 0.5f); // set sound effect volume
 
+When chaining busses care should be taken, as resampling will offset the output
+by a number of samples. Point sampling by 0, linear by 1, and higher resamplers
+with higher number of samples.
+
 ### Bus.setChannels()
 
 Set the number of channels this bus should handle. Defaults to 2 (stereo).
@@ -152,6 +156,33 @@ inaudible.
 Set the default volume of the bus.
 
     gMusicBus.setVolume(11);
+
+### Bus.annexSound()
+
+Move live audio stream under this bus. This can be useful if you have
+some heavy filtering under one bus and want to move playing sounds in
+and out of the bus.
+
+    gTunnelBus.annexSound(sfxBus);
+    
+
+### Bus.getActiveVoiceCount()
+
+Returns the number of concurrent sounds that are playing through this bus
+at the moment.
+
+    if (sfxbus.getActiveVoiceCount() == 0) enjoy_the_silence();
+
+
+### Bus.getResampler(), Bus.setResampler()
+
+Set or get the resampler for this bus. The default is linear interpolator.
+
+Setting the resampler does not change the resampler other busses or the main mixer uses.
+
+    // Use point-sample resampler for the music
+    gMusicBus.setResampler(SoLoud::Soloud::RESAMPLER_POINT);
+
     
 ### Inherited 3d audio interfaces
 

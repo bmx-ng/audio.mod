@@ -1,6 +1,6 @@
 ﻿/*
 SoLoud audio engine
-Copyright (c) 2013-2018 Jari Komppa
+Copyright (c) 2013-2020 Jari Komppa
 
 This software is provided 'as-is', without any express or implied
 warranty. In no event will the authors be held liable for any damages
@@ -28,7 +28,9 @@ freely, subject to the following restrictions:
 #include <vector>
 #include <string>
 
-#define VERSION "SoLoud C-Api Code Generator (c)2013-2018 Jari Komppa http://iki.fi/sol/"
+#define VERSION "SoLoud C-Api Code Generator (c)2013-2020 Jari Komppa http://iki.fi/sol/"
+
+//#define PRINT_FUNCTIONS
 
 #define OUTDIR "../src/c_api/"
 #define PYOUTDIR "../scripts/"
@@ -54,9 +56,12 @@ char *gIncludeFile[] =
 //	"../include/soloud_file_hack_on.h",
 	"../include/soloud_filter.h",
 	"../include/soloud_flangerfilter.h",
+	"../include/soloud_freeverbfilter.h",
 //	"../include/soloud_internal.h",
 	"../include/soloud_lofifilter.h",
+//	"../include/soloud_misc.h",
 	"../include/soloud_monotone.h",
+	"../include/soloud_noise.h",
 	"../include/soloud_openmpt.h",
 	"../include/soloud_queue.h",
 	"../include/soloud_robotizefilter.h",
@@ -161,7 +166,7 @@ int is_alphanumeric(char c)
 		return 1;
 	if (c >= 'A' && c <= 'Z')
 		return 1;
-	if (c == '_')
+	if (c == '_' || c == ':')
 		return 1;
 	return 0;
 }
@@ -396,7 +401,7 @@ void parse(const char *aFilename, int aPrintProgress = 0)
 			{
 				NEXTTOKEN;
 				// Okay, kludge time: let's call thread functions a class, even though they're not, so we can ignore it
-				if (s == "Thread" || s == "FFT")
+				if (s == "Thread" || s == "FFT" || s == "Misc" || s == "FreeverbImpl")
 				{
 					c = new Class;
 					c->mName = "Instance";
@@ -515,9 +520,8 @@ void parse(const char *aFilename, int aPrintProgress = 0)
 					
 				}
 				else
-				if (s == "public")
+				if (s == "public:")
 				{
-					EXPECT(":");
 					omit = !omit;
 //					printf("\n%s going omit %d", c->mName.c_str(), omit);
 				}
@@ -532,7 +536,6 @@ void parse(const char *aFilename, int aPrintProgress = 0)
 						NEXTTOKEN;
 					}
 
-
 					if (s == "const")
 					{
 						NEXTTOKEN;
@@ -544,6 +547,13 @@ void parse(const char *aFilename, int aPrintProgress = 0)
 						NEXTTOKEN;
 						vt1 = s;
 					}
+
+					if (s == "const")
+					{
+						NEXTTOKEN;
+						vt1 += " " + s;
+					}
+
 					if (s == "~")
 					{
 						// virtual dtor
@@ -654,7 +664,7 @@ void fileheader(FILE * f)
 		"\n"
 		"/*\n"
 		"SoLoud audio engine\n"
-		"Copyright (c) 2013-2016 Jari Komppa\n"
+		"Copyright (c) 2013-2020 Jari Komppa\n"
 		"\n"
 		"This software is provided 'as-is', without any express or implied\n"
 		"warranty. In no event will the authors be held liable for any damages\n"

@@ -40,9 +40,15 @@ namespace SoLoud
 		m3dVelocity[0] = 0;
 		m3dVelocity[1] = 0;
 		m3dVelocity[2] = 0;
+		m3dVolume = 0;
 		mCollider = 0;
 		mColliderData = 0;
 		mAttenuator = 0;
+		mDopplerValue = 0;
+		mFlags = 0;
+		mHandle = 0;
+		for (int i = 0; i < MAX_CHANNELS; i++)
+			mChannelVolume[i] = 0;
 	}
 
 	void AudioSourceInstance3dData::init(AudioSource &aSource)
@@ -94,7 +100,8 @@ namespace SoLoud
 		mSrcOffset = 0;
 		mLeftoverSamples = 0;
 		mDelaySamples = 0;
-
+		mOverallVolume = 0;
+		mOverallRelativePlaySpeed = 1;
 	}
 
 	AudioSourceInstance::~AudioSourceInstance()
@@ -135,6 +142,10 @@ namespace SoLoud
 		if (aSource.mFlags & AudioSource::INAUDIBLE_TICK)
 		{
 			mFlags |= AudioSourceInstance::INAUDIBLE_TICK;
+		}
+		if (aSource.mFlags & AudioSource::DISABLE_AUTOSTOP)
+		{
+			mFlags |= AudioSourceInstance::DISABLE_AUTOSTOP;
 		}
 	}
 
@@ -238,6 +249,18 @@ namespace SoLoud
 		}
 	}
 
+	void AudioSource::setAutoStop(bool aAutoStop)
+	{
+		if (aAutoStop)
+		{
+			mFlags &= ~DISABLE_AUTOSTOP;
+		}
+		else
+		{
+			mFlags |= DISABLE_AUTOSTOP;
+		}
+	}
+
 	void AudioSource::setFilter(unsigned int aFilterId, Filter *aFilter)
 	{
 		if (aFilterId >= FILTERS_PER_STREAM)
@@ -320,7 +343,7 @@ namespace SoLoud
 	}
 
 
-	float AudioSourceInstance::getInfo(unsigned int aInfoKey)
+	float AudioSourceInstance::getInfo(unsigned int /*aInfoKey*/)
 	{
 	    return 0;
 	}

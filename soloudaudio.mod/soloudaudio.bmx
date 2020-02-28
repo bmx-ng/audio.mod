@@ -1,4 +1,4 @@
-' Copyright (c) 2016-2019 Bruce A Henderson
+' Copyright (c) 2016-2020 Bruce A Henderson
 '
 ' This software is provided 'as-is', without any express or implied
 ' warranty. In no event will the authors be held liable for any damages
@@ -29,7 +29,7 @@ Module Audio.soloudaudio
 
 ModuleInfo "Version: 1.00"
 ModuleInfo "License: zlib/libpng"
-ModuleInfo "Copyright: 2016-2019 Bruce A Henderson"
+ModuleInfo "Copyright: 2016-2020 Bruce A Henderson"
 
 ModuleInfo "History: 1.00"
 ModuleInfo "History: Initial Release."
@@ -66,7 +66,8 @@ Type TSoloudAudioDriver Extends TAudioDriver
 	
 	Method Startup:Int()
 		_soloud = New TSoloud
-		_soloud.init()
+
+		_soloud.init(, Backend())
 
 		_driver = Self
 		
@@ -93,137 +94,9 @@ Type TSoloudAudioDriver Extends TAudioDriver
 		Return New TSoloudChannel
 	End Method
 
-End Type
-
-?win32
-New TDirectSoundSoloudAudioDriver
-New TWinmMMSoloudAudioDriver
-New TDefaultSoloudAudioDriver
-
-Type TDirectSoundSoloudAudioDriver Extends TSoloudAudioDriver
-
-	Method Name$()
-		Return "SoLoud::DirectSound"
-	End Method
-
-	Method Startup:Int()
-		SDLAudioInit("directsound")
-		Return Super.Startup()
-	End Method
+	Method Backend:Int() Abstract
 	
 End Type
-
-Type TWinmMMSoloudAudioDriver Extends TSoloudAudioDriver
-
-	Method Name$()
-		Return "SoLoud::WinMM"
-	End Method
-
-	Method Startup:Int()
-		SDLAudioInit("winmm")
-		Return Super.Startup()
-	End Method
-	
-End Type
-
-Type TDefaultSoloudAudioDriver Extends TDirectSoundSoloudAudioDriver
-
-	Method Name$()
-		Return "SoLoud"
-	End Method
-
-End Type
-?linux
-New TALSASoloudAudioDriver
-New TPulseAudioSoloudAudioDriver
-New TOSSSoloudAudioDriver
-New TNASSoloudAudioDriver
-New TDefaultSoloudAudioDriver
-
-Type TALSASoloudAudioDriver Extends TSoloudAudioDriver
-
-	Method Name$()
-		Return "SoLoud::ALSA"
-	End Method
-
-	Method Startup:Int()
-		SDLAudioInit("alsa")
-		Return Super.Startup()
-	End Method
-	
-End Type
-
-Type TPulseAudioSoloudAudioDriver Extends TSoloudAudioDriver
-
-	Method Name$()
-		Return "SoLoud::PulseAudio"
-	End Method
-
-	Method Startup:Int()
-		SDLAudioInit("pulseaudio")
-		Return Super.Startup()
-	End Method
-	
-End Type
-
-Type TOSSSoloudAudioDriver Extends TSoloudAudioDriver
-
-	Method Name$()
-		Return "SoLoud::OSS"
-	End Method
-
-	Method Startup:Int()
-		SDLAudioInit("dsp")
-		Return Super.Startup()
-	End Method
-	
-End Type
-
-Type TNASSoloudAudioDriver Extends TSoloudAudioDriver
-
-	Method Name$()
-		Return "SoLoud::NAS"
-	End Method
-
-	Method Startup:Int()
-		SDLAudioInit("nas")
-		Return Super.Startup()
-	End Method
-	
-End Type
-
-Type TDefaultSoloudAudioDriver Extends TPulseAudioSoloudAudioDriver
-
-	Method Name$()
-		Return "SoLoud"
-	End Method
-
-End Type
-?macos
-New TCoreAudioSoloudAudioDriver
-New TDefaultSoloudAudioDriver
-
-Type TCoreAudioSoloudAudioDriver Extends TSoloudAudioDriver
-
-	Method Name$()
-		Return "SoLoud::CoreAudio"
-	End Method
-
-	Method Startup:Int()
-		SDLAudioInit("coreaudio")
-		Return Super.Startup()
-	End Method
-	
-End Type
-
-Type TDefaultSoloudAudioDriver Extends TCoreAudioSoloudAudioDriver
-
-	Method Name$()
-		Return "SoLoud"
-	End Method
-
-End Type
-?
 
 Type TSoloudSound Extends TSound
 

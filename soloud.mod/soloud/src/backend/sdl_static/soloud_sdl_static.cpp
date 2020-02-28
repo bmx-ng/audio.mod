@@ -37,11 +37,7 @@ namespace SoLoud
 
 #else
 
-#if defined(_MSC_VER)
-#include <SDL.h>
-#else
-#include <SDL/SDL.h>
-#endif
+#include "SDL.h"
 #include <math.h>
 
 
@@ -76,7 +72,7 @@ namespace SoLoud
 			return UNKNOWN_ERROR;
 		}
 
-		aSoloud->postinit(gActiveAudioSpec.freq, gActiveAudioSpec.samples, aFlags, gActiveAudioSpec.channels);
+		aSoloud->postinit_internal(gActiveAudioSpec.freq, gActiveAudioSpec.samples, aFlags, gActiveAudioSpec.channels);
 
 		aSoloud->mBackendCleanupFunc = soloud_sdlstatic_deinit;
 

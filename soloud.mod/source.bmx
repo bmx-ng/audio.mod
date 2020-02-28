@@ -1,4 +1,4 @@
-' Copyright (c) 2016-2019 Bruce A Henderson
+' Copyright (c) 2016-2020 Bruce A Henderson
 '
 ' This software is provided 'as-is', without any express or implied
 ' warranty. In no event will the authors be held liable for any damages
@@ -21,8 +21,6 @@
 '
 SuperStrict
 
-Import "../../sdl.mod/sdl.mod/SDL/include/*.h"
-
 Import "soloud/include/*.h"
 
 ' core
@@ -41,6 +39,7 @@ Import "soloud/src/core/soloud_fft_lut.cpp"
 Import "soloud/src/core/soloud_fft.cpp"
 Import "soloud/src/core/soloud_file.cpp"
 Import "soloud/src/core/soloud_filter.cpp"
+Import "soloud/src/core/soloud_misc.cpp"
 Import "soloud/src/core/soloud_queue.cpp"
 Import "soloud/src/core/soloud_thread.cpp"
 Import "soloud/src/core/soloud.cpp"
@@ -53,6 +52,7 @@ Import "soloud/src/filter/soloud_dcremovalfilter.cpp"
 Import "soloud/src/filter/soloud_echofilter.cpp"
 Import "soloud/src/filter/soloud_fftfilter.cpp"
 Import "soloud/src/filter/soloud_flangerfilter.cpp"
+Import "soloud/src/filter/soloud_freeverbfilter.cpp"
 Import "soloud/src/filter/soloud_lofifilter.cpp"
 Import "soloud/src/filter/soloud_robotizefilter.cpp"
 Import "soloud/src/filter/soloud_waveshaperfilter.cpp"
@@ -66,6 +66,15 @@ Import "soloud/src/backend/alsa/soloud_alsa.cpp"
 ' backend - coreaudio
 Import "soloud/src/backend/coreaudio/soloud_coreaudio.cpp"
 
+' backend - jack
+Import "soloud/src/backend/jack/soloud_jack.cpp"
+
+' backend - nosound
+Import "soloud/src/backend/nosound/soloud_nosound.cpp"
+
+' backend - null
+Import "soloud/src/backend/null/soloud_null.cpp"
+
 ' backend - openal
 Import "soloud/src/backend/openal/soloud_openal_dll.c"
 Import "soloud/src/backend/openal/soloud_openal.cpp"
@@ -73,9 +82,6 @@ Import "soloud/src/backend/openal/soloud_openal.cpp"
 ' backend - portaudio
 Import "soloud/src/backend/portaudio/soloud_portaudio_dll.c"
 Import "soloud/src/backend/portaudio/soloud_portaudio.cpp"
-
-' backend - sdl2_static
-Import "soloud/src/backend/sdl2_static/soloud_sdl2_static.cpp"
 
 ' backend - wasapi
 Import "soloud/src/backend/wasapi/soloud_wasapi.cpp"
@@ -86,9 +92,8 @@ Import "soloud/src/backend/winmm/soloud_winmm.cpp"
 ' audiosource - monotone
 Import "soloud/src/audiosource/monotone/soloud_monotone.cpp"
 
-' audiosource - openmpt
-'Import "soloud/src/audiosource/openmpt/soloud_openmpt.cpp"
-'Import "soloud/src/audiosource/openmpt/soloud_openmpt_dll.c"
+' audiosource - monotone
+Import "soloud/src/audiosource/noise/soloud_noise.cpp"
 
 ' audiosource - sfxr
 Import "soloud/src/audiosource/sfxr/soloud_sfxr.cpp"

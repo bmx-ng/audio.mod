@@ -29,7 +29,7 @@ freely, subject to the following restrictions:
 
 namespace SoLoud
 {
-	result sdl1_init(SoLoud::Soloud *aSoloud, unsigned int aFlags, unsigned int aSamplerate, unsigned int aBuffer)
+	result sdl1_init(SoLoud::Soloud * /*aSoloud*/, unsigned int /*aFlags*/, unsigned int /*aSamplerate*/, unsigned int /*aBuffer*/)
 	{
 		return NOT_IMPLEMENTED;
 	}
@@ -37,11 +37,7 @@ namespace SoLoud
 
 #else
 
-#if defined(_MSC_VER)
-#include <SDL.h>
-#else
-#include <SDL/SDL.h>
-#endif
+#include "SDL.h"
 #include <math.h>
 
 
@@ -89,7 +85,7 @@ namespace SoLoud
 			return UNKNOWN_ERROR;
 		}
 
-		aSoloud->postinit(gActiveAudioSpec.freq, gActiveAudioSpec.samples, aFlags, gActiveAudioSpec.channels);
+		aSoloud->postinit_internal(gActiveAudioSpec.freq, gActiveAudioSpec.samples, aFlags, gActiveAudioSpec.channels);
 
 		aSoloud->mBackendCleanupFunc = soloud_sdl1_deinit;
 

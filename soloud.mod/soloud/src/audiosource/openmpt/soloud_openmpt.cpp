@@ -81,7 +81,7 @@ namespace SoLoud
 		mModfile = 0;
 	}
 
-	result Openmpt::loadMem(unsigned char *aMem, unsigned int aLength, bool aCopy, bool aTakeOwnership)
+	result Openmpt::loadMem(const unsigned char *aMem, unsigned int aLength, bool aCopy, bool aTakeOwnership)
 	{
 		MemoryFile mf;
 		int res = mf.openMem(aMem, aLength, aCopy, aTakeOwnership);
@@ -142,8 +142,8 @@ namespace SoLoud
 		if (mData)
 		{
 			delete[] mData;
+			mData = 0;
 		}
-		mData = 0;
 		mDataLen = 0;
 	}
 

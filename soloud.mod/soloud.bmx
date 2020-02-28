@@ -1,4 +1,4 @@
-' Copyright (c) 2016-2019 Bruce A Henderson
+' Copyright (c) 2016-2020 Bruce A Henderson
 '
 ' This software is provided 'as-is', without any express or implied
 ' warranty. In no event will the authors be held liable for any damages
@@ -26,11 +26,14 @@ bbdoc:
 End Rem
 Module Audio.SoLoud
 
-ModuleInfo "Version: 1.00"
+ModuleInfo "Version: 1.01"
 ModuleInfo "License: zlib/libpng"
-ModuleInfo "Copyright: SoLoud - 2013-2018 Jari Komppa"
-ModuleInfo "Copyright: Wrapper - 2016-2019 Bruce A Henderson"
+ModuleInfo "Copyright: SoLoud - 2013-2020 Jari Komppa"
+ModuleInfo "Copyright: Wrapper - 2016-2020 Bruce A Henderson"
 
+ModuleInfo "History: 1.01"
+ModuleInfo "History: Update to latest SoLoud."
+ModuleInfo "History: Refactored drivers. SDL and miniaudio now available as backends."
 ModuleInfo "History: 1.00"
 ModuleInfo "History: Initial Release."
 
@@ -44,11 +47,10 @@ ModuleInfo "CC_OPTS: -msse2"
 ModuleInfo "CC_OPTS: -msse3"
 ?
 ModuleInfo "CC_OPTS: -DWITH_SDL2_STATIC"
+ModuleInfo "CC_OPTS: -DWITH_MINIAUDIO"
 
 Import "file.bmx"
 Import "common.bmx"
-
-SDL_InitSubSystem(SDL_INIT_AUDIO)
 
 Rem
 bbdoc: 
@@ -358,8 +360,8 @@ Type TSoloud
 	Rem
 	bbdoc: Sets absolute left/right volumes.
 	End Rem
-	Method setPanAbsolute(voiceHandle:Int, lVolume:Float, rVolume:Float, lBVolume:Float = 0, rBVolume:Float = 0, cVolume:Float = 0, sVolume:Float = 0)
-		Soloud_setPanAbsoluteEx(slPtr, voiceHandle, lVolume, rVolume, lBVolume, rBVolume, cVolume, sVolume)
+	Method SetChannelVolume(voiceHandle:Int, channel:Int, volume:Float)
+		Soloud_setChannelVolume(slPtr, voiceHandle, channel, volume)
 	End Method
 	
 	Rem

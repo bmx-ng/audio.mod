@@ -26,10 +26,8 @@ freely, subject to the following restrictions:
 #include <stdlib.h>
 #if defined(_MSC_VER)
 #define WINDOWS_VERSION
-#include <SDL.h>
-#else
-#include <SDL2/SDL.h>
 #endif
+#include "SDL.h"
 #include <math.h>
 
 
@@ -61,7 +59,7 @@ static HMODULE sdl2_openDll()
 
 static void* sdl2_getDllProc(HMODULE aDllHandle, const char *aProcName)
 {
-    return GetProcAddress(aDllHandle, aProcName);
+    return (void*)GetProcAddress(aDllHandle, (LPCSTR)aProcName);
 }
 
 #else

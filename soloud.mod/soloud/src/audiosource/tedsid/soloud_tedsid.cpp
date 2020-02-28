@@ -53,7 +53,7 @@ namespace SoLoud
 			mRegValues[i] = 0;
 	}
 
-	unsigned int TedSidInstance::getAudio(float *aBuffer, unsigned int aSamplesToRead, unsigned int aBufferSize)
+	unsigned int TedSidInstance::getAudio(float *aBuffer, unsigned int aSamplesToRead, unsigned int /*aBufferSize*/)
 	{
 		unsigned int i;
 		for (i = 0; i < aSamplesToRead; i++)
@@ -79,12 +79,12 @@ namespace SoLoud
 			mRegValues[mNextReg] = mNextVal;
 			if (mNextReg < 64)
 			{
-				mSID->write(mNextReg, mNextVal);
+				mSID->write(mNextReg, (unsigned char)mNextVal);
 			}
 			else
 			if (mNextReg < 64 + 5)
 			{
-				mTED->writeSoundReg(mNextReg - 64, mNextVal);
+				mTED->writeSoundReg(mNextReg - 64, (unsigned char)mNextVal);
 			}
 //			mSampleCount = mParent->mFile->read16();
 			mNextVal = mParent->mFile->read8();
@@ -123,6 +123,7 @@ namespace SoLoud
 		mChannels = 1;
 		mFile = 0;
 		mFileOwned = false;
+		mModel = 0;
 	}
 
 	TedSid::~TedSid()
@@ -132,7 +133,7 @@ namespace SoLoud
 			delete mFile;
 	}
 
-	result TedSid::loadMem(unsigned char *aMem, unsigned int aLength, bool aCopy, bool aTakeOwnership)
+	result TedSid::loadMem(const unsigned char *aMem, unsigned int aLength, bool aCopy, bool aTakeOwnership)
 	{
 		if (!aMem || aLength == 0)
 			return INVALID_PARAMETER;
