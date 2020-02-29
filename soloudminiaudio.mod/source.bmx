@@ -22,6 +22,7 @@
 SuperStrict
 
 Import "../soloud.mod/soloud/include/*.h"
+Import "../soloud.mod/soloud/src/backend/miniaudio/*.h"
 
 ' backend - miniaudio
 Import "../soloud.mod/soloud/src/backend/miniaudio/soloud_miniaudio.cpp"

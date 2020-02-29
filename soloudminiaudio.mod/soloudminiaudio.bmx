@@ -48,3 +48,11 @@ ModuleInfo "CC_OPTS: -DWITH_MINIAUDIO"
 
 Import "common.bmx"
 
+Function MiniAudioInit(backend:Int)
+	bmx_soloud_miniaudio_context_init(backend)
+End Function
+
+Private
+Extern
+	Function bmx_soloud_miniaudio_context_init(backend:Int)
+End Extern

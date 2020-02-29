@@ -43,6 +43,8 @@ namespace SoLoud
 #include "miniaudio.h"
 #include <math.h>
 
+extern ma_context * _bmx_ma_context;
+
 namespace SoLoud
 {
     ma_device gDevice;
@@ -68,7 +70,7 @@ namespace SoLoud
         config.dataCallback       = soloud_miniaudio_audiomixer;
         config.pUserData          = (void *)aSoloud;
 
-        if (ma_device_init(NULL, &config, &gDevice) != MA_SUCCESS)
+        if (ma_device_init(_bmx_ma_context, &config, &gDevice) != MA_SUCCESS)
         {
             return UNKNOWN_ERROR;
         }

@@ -26,17 +26,16 @@ Module Audio.SoloudAudioSDL
 Import Audio.SoloudSDL
 Import Audio.SoloudAudio
 
-
-?win32
-New TDirectSoundSoloudAudioDriver
-New TWinmMMSoloudAudioDriver
-New TDefaultSoloudAudioDriver
-
 Type TSDLSoloudAudioDriver Extends TSoloudAudioDriver
 	Method Backend:Int()
 		Return SOLOUD_SDL2
 	End Method
 End Type
+
+?win32
+New TDirectSoundSoloudAudioDriver
+New TWinmMMSoloudAudioDriver
+New TDefaultSoloudAudioDriver
 
 Type TDirectSoundSoloudAudioDriver Extends TSDLSoloudAudioDriver
 
