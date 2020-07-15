@@ -27,10 +27,12 @@ about: Provides Soloud driver for use with the BRL.Audio module.
 End Rem
 Module Audio.soloudaudio
 
-ModuleInfo "Version: 1.00"
+ModuleInfo "Version: 1.01"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: 2016-2020 Bruce A Henderson"
 
+ModuleInfo "History: 1.01"
+ModuleInfo "History: Added support for Ay (in .zap format) loading."
 ModuleInfo "History: 1.00"
 ModuleInfo "History: Initial Release."
 
@@ -52,6 +54,7 @@ Const SOLOUD_SOUND_OPENMPT:Int =   $00008000
 Const SOLOUD_SOUND_MONOTONE:Int =  $00010000
 Const SOLOUD_SOUND_TEDSID:Int =    $00020000
 Const SOLOUD_SOUND_SPEECH:Int =    $00040000
+Const SOLOUD_SOUND_AY:Int =        $00080000
 
 Const SOLOUD_SOUND_PAUSE_INAUDIBLE:Int = $10000000
 Const SOLOUD_SOUND_PROTECT:Int = $20000000
@@ -169,6 +172,8 @@ Type TSoloudSound Extends TSound
 			sound = New TSLMonotone
 		Else If loopFlag & SOLOUD_SOUND_TEDSID Then
 			sound = New TSLTedSid
+		Else If loopFlag & SOLOUD_SOUND_AY Then
+			sound = New TSLAy
 		End If
 		
 		Local this:TSoloudSound = New TSoloudSound
@@ -391,6 +396,7 @@ Public
 
 New TSoloudWavLoader(5)
 New TSoloudMonotoneLoader(10)
+New TSoloudAyLoader(15)
 
 Rem
 bbdoc: 
@@ -445,6 +451,18 @@ Type TSoloudMonotoneLoader Extends TAudioSourceLoader
 
 	Method LoadAudioSource:TSLLoadableAudioSource( stream:TStream )
 		Local sound:TSLLoadableAudioSource = New TSLMonotone
+		If sound.loadStream(stream) = SO_NO_ERROR Then
+			Return sound
+		End If
+		sound.destroy()
+	End Method
+	
+End Type
+
+Type TSoloudAyLoader Extends TAudioSourceLoader
+
+	Method LoadAudioSource:TSLLoadableAudioSource( stream:TStream )
+		Local sound:TSLLoadableAudioSource = New TSLAy
 		If sound.loadStream(stream) = SO_NO_ERROR Then
 			Return sound
 		End If

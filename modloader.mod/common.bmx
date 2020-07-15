@@ -41,6 +41,7 @@ Extern
 	Function Openmpt_loadFile:Int(aOpenmpt:Byte Ptr, aFile:Byte Ptr)
 	Function Openmpt_setVolume(aOpenmpt:Byte Ptr, aVolume:Float)
 	Function Openmpt_setLooping(aOpenmpt:Byte Ptr, aLoop:Int)
+	Function Openmpt_setAutoStop(aOpenmpt:Byte Ptr, aAutoStop:Int)
 	Function Openmpt_set3dMinMaxDistance(aOpenmpt:Byte Ptr, aMinDistance:Float, aMaxDistance:Float)
 	Function Openmpt_set3dAttenuation(aOpenmpt:Byte Ptr, aAttenuationModel:Int, aAttenuationRolloffFactor:Float)
 	Function Openmpt_set3dDopplerFactor(aOpenmpt:Byte Ptr, aDopplerFactor:Float)

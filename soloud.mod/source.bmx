@@ -50,6 +50,7 @@ Import "soloud/src/filter/soloud_bassboostfilter.cpp"
 Import "soloud/src/filter/soloud_biquadresonantfilter.cpp"
 Import "soloud/src/filter/soloud_dcremovalfilter.cpp"
 Import "soloud/src/filter/soloud_echofilter.cpp"
+Import "soloud/src/filter/soloud_eqfilter.cpp"
 Import "soloud/src/filter/soloud_fftfilter.cpp"
 Import "soloud/src/filter/soloud_flangerfilter.cpp"
 Import "soloud/src/filter/soloud_freeverbfilter.cpp"
@@ -88,6 +89,14 @@ Import "soloud/src/backend/wasapi/soloud_wasapi.cpp"
 
 ' backend - winmm
 Import "soloud/src/backend/winmm/soloud_winmm.cpp"
+
+' audiosource - ay
+Import "soloud/src/audiosource/ay/*.h"
+Import "soloud/src/audiosource/ay/chipplayer.cpp"
+Import "soloud/src/audiosource/ay/sndbuffer.cpp"
+Import "soloud/src/audiosource/ay/sndchip.cpp"
+Import "soloud/src/audiosource/ay/sndrender.cpp"
+Import "soloud/src/audiosource/ay/soloud_ay.cpp"
 
 ' audiosource - monotone
 Import "soloud/src/audiosource/monotone/soloud_monotone.cpp"

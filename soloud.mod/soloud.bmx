@@ -22,15 +22,18 @@
 SuperStrict
 
 Rem
-bbdoc: 
+bbdoc: SoLoud audio.
 End Rem
 Module Audio.SoLoud
 
-ModuleInfo "Version: 1.01"
+ModuleInfo "Version: 1.02"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: SoLoud - 2013-2020 Jari Komppa"
 ModuleInfo "Copyright: Wrapper - 2016-2020 Bruce A Henderson"
 
+ModuleInfo "History: 1.02"
+ModuleInfo "History: Update to latest SoLoud."
+ModuleInfo "History: Added TSLAy audio source."
 ModuleInfo "History: 1.01"
 ModuleInfo "History: Update to latest SoLoud."
 ModuleInfo "History: Refactored drivers. SDL and miniaudio now available as backends."
@@ -53,7 +56,7 @@ Import "file.bmx"
 Import "common.bmx"
 
 Rem
-bbdoc: 
+bbdoc: An instance of the Soloud player.
 End Rem
 Type TSoloud
 
@@ -281,9 +284,26 @@ Type TSoloud
 	Method getLooping:Int(voiceHandle:Int)
 		Return Soloud_getLooping(slPtr, voiceHandle)
 	End Method
-	
+
+	Rem
+	bbdoc: Sets voice's loop state.
+	End Rem
 	Method setLooping(voiceHandle:Int, looping:Int)
 		Soloud_setLooping(slPtr, voiceHandle, looping)
+	End Method
+
+	Rem
+	bbdoc: Queries whether a voice is set to auto-stop when it ends.
+	End Rem
+	Method getAutoStop:Int(voiceHandle:Int)
+		Return Soloud_getAutoStop(slPtr, voiceHandle)
+	End Method
+	
+	Rem
+	bbdoc: Sets whether sound should auto-stop when it ends.
+	End Rem
+	Method setAutoStop(voiceHandle:Int, autoStop:Int)
+		Soloud_setAutoStop(slPtr, voiceHandle, autoStop)
 	End Method
 	
 	Rem
@@ -514,7 +534,7 @@ Type TSoloud
 End Type
 
 Rem
-bbdoc: 
+bbdoc: Base type for audio sources.
 End Rem
 Type TSLAudioSource Abstract
 
@@ -524,6 +544,7 @@ Type TSLAudioSource Abstract
 
 	Method setVolume(volume:Float) Abstract
 	Method setLooping(loop:Int) Abstract
+	Method setAutoStop(autoStop:Int) Abstract
 	Method set3dMinMaxDistance(minDistance:Float, maxDistance:Float) Abstract
 	Method set3dAttenuation(attenuationModel:Int, attenuationRolloffFactor:Float) Abstract
 	Method set3dDopplerFactor(dopplerFactor:Float) Abstract
@@ -551,7 +572,7 @@ Type TSLLoadableAudioSource Extends TSLAudioSource
 End Type
 
 Rem
-bbdoc: 
+bbdoc: Audio source for a Klatt-style formant speech synthesizer.
 End Rem
 Type TSLSpeech Extends TSLAudioSource
 
@@ -571,35 +592,42 @@ Type TSLSpeech Extends TSLAudioSource
 	Rem
 	bbdoc: Sets default volume for instances.
 	End Rem
-	Method setVolume(volume:Float)
+	Method setVolume(volume:Float) Override
 		Speech_setVolume(asPtr, volume)
 	End Method
 	
 	Rem
 	bbdoc: Sets the looping of the instances created from this audio source.
 	End Rem
-	Method setLooping(loop:Int)
+	Method setLooping(loop:Int) Override
 		Speech_setLooping(asPtr, loop)
 	End Method
 
 	Rem
+	bbdoc: Sets whether audio should auto-stop when it ends or not.
+	End Rem
+	Method setAutoStop(autoStop:Int) Override
+		Speech_setAutoStop(asPtr, autoStop)
+	End Method
+	
+	Rem
 	bbdoc: Sets the minimum and maximum distances for 3d audio source (closer to min distance = max vol)
 	End Rem
-	Method set3dMinMaxDistance(minDistance:Float, maxDistance:Float)
+	Method set3dMinMaxDistance(minDistance:Float, maxDistance:Float) Override
 		Speech_set3dMinMaxDistance(asPtr, minDistance, maxDistance)
 	End Method
 	
 	Rem
 	bbdoc: Sets attenuation model and rolloff factor for 3d audio source.
 	End Rem
-	Method set3dAttenuation(attenuationModel:Int, attenuationRolloffFactor:Float)
+	Method set3dAttenuation(attenuationModel:Int, attenuationRolloffFactor:Float) Override
 		Speech_set3dAttenuation(asPtr, attenuationModel, attenuationRolloffFactor)
 	End Method
 
 	Rem
 	bbdoc: Sets doppler factor to reduce or enhance doppler effect, default = 1.0
 	End Rem
-	Method set3dDopplerFactor(dopplerFactor:Float)
+	Method set3dDopplerFactor(dopplerFactor:Float) Override
 		Speech_set3dDopplerFactor(asPtr, dopplerFactor)
 	End Method
 
@@ -607,21 +635,21 @@ Type TSLSpeech Extends TSLAudioSource
 	bbdoc: Enables 3d processing.
 	about: Implicitly set by play3d calls.
 	End Rem
-	Method set3dListenerRelative(listenerRelative:Int)
+	Method set3dListenerRelative(listenerRelative:Int) Override
 		Speech_set3dListenerRelative(asPtr, listenerRelative)
 	End Method
 
 	Rem
 	bbdoc: Sets the coordinates for this audio source to be relative to listener's coordinates.
 	End Rem
-	Method set3dDistanceDelay(distanceDelay:Int)
+	Method set3dDistanceDelay(distanceDelay:Int) Override
 		Speech_set3dListenerRelative(asPtr, distanceDelay)
 	End Method
 
 	Rem
 	bbdoc: Enables delaying the start of the sound based on the distance.
 	End Rem
-	Method set3dCollider(collider:TSLAudioCollider)
+	Method set3dCollider(collider:TSLAudioCollider) Override
 		' TODO
 	End Method
 
@@ -629,7 +657,7 @@ Type TSLSpeech Extends TSLAudioSource
 	bbdoc: Sets a custom 3d audio collider.
 	about: Set to Null to disable.
 	End Rem
-	Method set3dColliderEx(collider:TSLAudioCollider, userData:Int)
+	Method set3dColliderEx(collider:TSLAudioCollider, userData:Int) Override
 		' TODO
 	End Method
 
@@ -637,14 +665,14 @@ Type TSLSpeech Extends TSLAudioSource
 	bbdoc: Sets a custom attenuator.
 	about: Set to Null to disable.
 	End Rem
-	Method set3dAttenuator(attenuator:TSLAudioAttenuator)
+	Method set3dAttenuator(attenuator:TSLAudioAttenuator) Override
 		' TODO
 	End Method
 
 	Rem
 	bbdoc: Sets behavior for inaudible sounds.
 	End Rem
-	Method setInaudibleBehavior(mustTick:Int, kill:Int)
+	Method setInaudibleBehavior(mustTick:Int, kill:Int) Override
 		Speech_setInaudibleBehavior(asPtr, mustTick, kill)
 	End Method
 
@@ -652,19 +680,19 @@ Type TSLSpeech Extends TSLAudioSource
 	bbdoc: Sets filter.
 	about: Set to NULL to clear the filter.
 	End Rem
-	Method setFilter(filterId:Int, filter:TSLFilter)
+	Method setFilter(filterId:Int, filter:TSLFilter) Override
 		' TODO
 	End Method
 
 	Rem
 	bbdoc: Stops all instances of this audio source.
 	End Rem
-	Method stop()
+	Method stop() Override
 		Speech_stop(asPtr)
 	End Method
 
 
-	Method destroy()
+	Method destroy() Override
 		If asPtr Then
 			Speech_destroy(asPtr)
 			asPtr = Null
@@ -678,7 +706,13 @@ Type TSLSpeech Extends TSLAudioSource
 End Type
 
 Rem
-bbdoc: 
+bbdoc: Audio source for wave sound effects.
+about: The source files may be in various RIFF WAV file formats, FLAC, MP3 or Ogg Vorbis files.
+The sounds are loaded and converted to float samples, which means that every second of a 44100Hz stereo sound takes about 350kB of memory.
+The good side is, after loading, the use of these samples are very lightweight, as their processing is mostly just a memory copy.
+
+For lengthy samples like background music, you may want to use #TSLWavStream instead.
+The Wav is all about speed, and always decodes the whole sample into memory at load time.
 End Rem
 Type TSLWav Extends TSLLoadableAudioSource
 
@@ -696,7 +730,7 @@ Type TSLWav Extends TSLLoadableAudioSource
 	Rem
 	bbdoc: 
 	End Rem
-	Method Load:Int(filename:String)
+	Method Load:Int(filename:String) Override
 		Local s:Byte Ptr = filename.ToUTF8String()
 		Local res:Int = Wav_load(asPtr, s)
 		MemFree(s)
@@ -706,14 +740,14 @@ Type TSLWav Extends TSLLoadableAudioSource
 	Rem
 	bbdoc: 
 	End Rem
-	Method loadMem:Int(data:Byte Ptr, dataLen:Int, copy:Int = False, takeOwnership:Int = True)
+	Method loadMem:Int(data:Byte Ptr, dataLen:Int, copy:Int = False, takeOwnership:Int = True) Override
 		Return Wav_loadMemEx(asPtr, data, dataLen, copy, takeOwnership)
 	End Method
 
 	Rem
 	bbdoc: 
 	End Rem
-	Method loadStream:Int(stream:TStream)
+	Method loadStream:Int(stream:TStream) Override
 		Local sf:TStreamFile = New TStreamFile.Create(stream)
 		Local res:Int = Wav_loadFile(asPtr, sf.filePtr)
 		'sf.Free()
@@ -723,35 +757,42 @@ Type TSLWav Extends TSLLoadableAudioSource
 	Rem
 	bbdoc: Sets default volume for instances.
 	End Rem
-	Method setVolume(volume:Float)
+	Method setVolume(volume:Float) Override
 		Wav_setVolume(asPtr, volume)
 	End Method
 	
 	Rem
 	bbdoc: Sets the looping of the instances created from this audio source.
 	End Rem
-	Method setLooping(loop:Int)
+	Method setLooping(loop:Int) Override
 		Wav_setLooping(asPtr, loop)
+	End Method
+
+	Rem
+	bbdoc: Sets whether audio should auto-stop when it ends or not.
+	End Rem
+	Method setAutoStop(autoStop:Int) Override
+		Wav_setAutoStop(asPtr, autoStop)
 	End Method
 
 	Rem
 	bbdoc: Sets the minimum and maximum distances for 3d audio source (closer to min distance = max vol)
 	End Rem
-	Method set3dMinMaxDistance(minDistance:Float, maxDistance:Float)
+	Method set3dMinMaxDistance(minDistance:Float, maxDistance:Float) Override
 		Wav_set3dMinMaxDistance(asPtr, minDistance, maxDistance)
 	End Method
 	
 	Rem
 	bbdoc: Sets attenuation model and rolloff factor for 3d audio source.
 	End Rem
-	Method set3dAttenuation(attenuationModel:Int, attenuationRolloffFactor:Float)
+	Method set3dAttenuation(attenuationModel:Int, attenuationRolloffFactor:Float) Override
 		Wav_set3dAttenuation(asPtr, attenuationModel, attenuationRolloffFactor)
 	End Method
 
 	Rem
 	bbdoc: Sets doppler factor to reduce or enhance doppler effect, default = 1.0
 	End Rem
-	Method set3dDopplerFactor(dopplerFactor:Float)
+	Method set3dDopplerFactor(dopplerFactor:Float) Override
 		Wav_set3dDopplerFactor(asPtr, dopplerFactor)
 	End Method
 
@@ -759,21 +800,21 @@ Type TSLWav Extends TSLLoadableAudioSource
 	bbdoc: Enables 3d processing.
 	about: Implicitly set by play3d calls.
 	End Rem
-	Method set3dListenerRelative(listenerRelative:Int)
+	Method set3dListenerRelative(listenerRelative:Int) Override
 		Wav_set3dListenerRelative(asPtr, listenerRelative)
 	End Method
 
 	Rem
 	bbdoc: Sets the coordinates for this audio source to be relative to listener's coordinates.
 	End Rem
-	Method set3dDistanceDelay(distanceDelay:Int)
+	Method set3dDistanceDelay(distanceDelay:Int) Override
 		Speech_set3dListenerRelative(asPtr, distanceDelay)
 	End Method
 
 	Rem
 	bbdoc: Enables delaying the start of the sound based on the distance.
 	End Rem
-	Method set3dCollider(collider:TSLAudioCollider)
+	Method set3dCollider(collider:TSLAudioCollider) Override
 		' TODO
 	End Method
 
@@ -781,7 +822,7 @@ Type TSLWav Extends TSLLoadableAudioSource
 	bbdoc: Sets a custom 3d audio collider.
 	about: Set to Null to disable.
 	End Rem
-	Method set3dColliderEx(collider:TSLAudioCollider, userData:Int)
+	Method set3dColliderEx(collider:TSLAudioCollider, userData:Int) Override
 		' TODO
 	End Method
 
@@ -789,14 +830,14 @@ Type TSLWav Extends TSLLoadableAudioSource
 	bbdoc: Sets a custom attenuator.
 	about: Set to Null to disable.
 	End Rem
-	Method set3dAttenuator(attenuator:TSLAudioAttenuator)
+	Method set3dAttenuator(attenuator:TSLAudioAttenuator) Override
 		' TODO
 	End Method
 
 	Rem
 	bbdoc: Sets behavior for inaudible sounds.
 	End Rem
-	Method setInaudibleBehavior(mustTick:Int, kill:Int)
+	Method setInaudibleBehavior(mustTick:Int, kill:Int) Override
 		Wav_setInaudibleBehavior(asPtr, mustTick, kill)
 	End Method
 
@@ -804,18 +845,18 @@ Type TSLWav Extends TSLLoadableAudioSource
 	bbdoc: Sets filter.
 	about: Set to NULL to clear the filter.
 	End Rem
-	Method setFilter(filterId:Int, filter:TSLFilter)
+	Method setFilter(filterId:Int, filter:TSLFilter) Override
 		' TODO
 	End Method
 
 	Rem
 	bbdoc: Stops all instances of this audio source.
 	End Rem
-	Method stop()
+	Method stop() Override
 		Wav_stop(asPtr)
 	End Method
 
-	Method destroy()
+	Method destroy() Override
 		If asPtr Then
 			Wav_destroy(asPtr)
 			asPtr = Null
@@ -829,7 +870,11 @@ Type TSLWav Extends TSLLoadableAudioSource
 End Type
 
 Rem
-bbdoc: 
+bbdoc: Audio source for streamed wave sounds.
+about: The source files may be in various RIFF WAV file formats, FLAC, MP3 or Ogg Vorbis files.
+The sounds are loaded in pieces while they are playing, which takes more processing power than playing samples from memory, but they require much less memory.
+
+For short or often used samples, you may want to use #TSLWav instead.
 End Rem
 Type TSLWavStream Extends TSLLoadableAudioSource
 
@@ -840,7 +885,7 @@ Type TSLWavStream Extends TSLLoadableAudioSource
 	Rem
 	bbdoc: 
 	End Rem
-	Method Load:Int(filename:String)
+	Method Load:Int(filename:String) Override
 		Local s:Byte Ptr = filename.ToUTF8String()
 		Local res:Int = WavStream_load(asPtr, s)
 		MemFree(s)
@@ -857,14 +902,14 @@ Type TSLWavStream Extends TSLLoadableAudioSource
 	Rem
 	bbdoc: 
 	End Rem
-	Method loadMem:Int(data:Byte Ptr, dataLen:Int, copy:Int = False, takeOwnership:Int = True)
+	Method loadMem:Int(data:Byte Ptr, dataLen:Int, copy:Int = False, takeOwnership:Int = True) Override
 		Return WavStream_loadMemEx(asPtr, data, dataLen, copy, takeOwnership)
 	End Method
 
 	Rem
 	bbdoc: 
 	End Rem
-	Method loadStream:Int(stream:TStream)
+	Method loadStream:Int(stream:TStream) Override
 		Local sf:TStreamFile = New TStreamFile.Create(stream)
 		Return WavStream_loadFile(asPtr, sf.filePtr)
 	End Method
@@ -872,35 +917,42 @@ Type TSLWavStream Extends TSLLoadableAudioSource
 	Rem
 	bbdoc: Sets default volume for instances.
 	End Rem
-	Method setVolume(volume:Float)
+	Method setVolume(volume:Float) Override
 		WavStream_setVolume(asPtr, volume)
 	End Method
 	
 	Rem
 	bbdoc: Sets the looping of the instances created from this audio source.
 	End Rem
-	Method setLooping(loop:Int)
+	Method setLooping(loop:Int) Override
 		WavStream_setLooping(asPtr, loop)
+	End Method
+
+	Rem
+	bbdoc: Sets whether audio should auto-stop when it ends or not.
+	End Rem
+	Method setAutoStop(autoStop:Int) Override
+		WavStream_setAutoStop(asPtr, autoStop)
 	End Method
 
 	Rem
 	bbdoc: Sets the minimum and maximum distances for 3d audio source (closer to min distance = max vol)
 	End Rem
-	Method set3dMinMaxDistance(minDistance:Float, maxDistance:Float)
+	Method set3dMinMaxDistance(minDistance:Float, maxDistance:Float) Override
 		WavStream_set3dMinMaxDistance(asPtr, minDistance, maxDistance)
 	End Method
 	
 	Rem
 	bbdoc: Sets attenuation model and rolloff factor for 3d audio source.
 	End Rem
-	Method set3dAttenuation(attenuationModel:Int, attenuationRolloffFactor:Float)
+	Method set3dAttenuation(attenuationModel:Int, attenuationRolloffFactor:Float) Override
 		WavStream_set3dAttenuation(asPtr, attenuationModel, attenuationRolloffFactor)
 	End Method
 
 	Rem
 	bbdoc: Sets doppler factor to reduce or enhance doppler effect, default = 1.0
 	End Rem
-	Method set3dDopplerFactor(dopplerFactor:Float)
+	Method set3dDopplerFactor(dopplerFactor:Float) Override
 		WavStream_set3dDopplerFactor(asPtr, dopplerFactor)
 	End Method
 
@@ -908,21 +960,21 @@ Type TSLWavStream Extends TSLLoadableAudioSource
 	bbdoc: Enables 3d processing.
 	about: Implicitly set by play3d calls.
 	End Rem
-	Method set3dListenerRelative(listenerRelative:Int)
+	Method set3dListenerRelative(listenerRelative:Int) Override
 		WavStream_set3dListenerRelative(asPtr, listenerRelative)
 	End Method
 
 	Rem
 	bbdoc: Sets the coordinates for this audio source to be relative to listener's coordinates.
 	End Rem
-	Method set3dDistanceDelay(distanceDelay:Int)
+	Method set3dDistanceDelay(distanceDelay:Int) Override
 		WavStream_set3dListenerRelative(asPtr, distanceDelay)
 	End Method
 
 	Rem
 	bbdoc: Enables delaying the start of the sound based on the distance.
 	End Rem
-	Method set3dCollider(collider:TSLAudioCollider)
+	Method set3dCollider(collider:TSLAudioCollider) Override
 		' TODO
 	End Method
 
@@ -930,7 +982,7 @@ Type TSLWavStream Extends TSLLoadableAudioSource
 	bbdoc: Sets a custom 3d audio collider.
 	about: Set to Null to disable.
 	End Rem
-	Method set3dColliderEx(collider:TSLAudioCollider, userData:Int)
+	Method set3dColliderEx(collider:TSLAudioCollider, userData:Int) Override
 		' TODO
 	End Method
 
@@ -938,14 +990,14 @@ Type TSLWavStream Extends TSLLoadableAudioSource
 	bbdoc: Sets a custom attenuator.
 	about: Set to Null to disable.
 	End Rem
-	Method set3dAttenuator(attenuator:TSLAudioAttenuator)
+	Method set3dAttenuator(attenuator:TSLAudioAttenuator) Override
 		' TODO
 	End Method
 
 	Rem
 	bbdoc: Sets behavior for inaudible sounds.
 	End Rem
-	Method setInaudibleBehavior(mustTick:Int, kill:Int)
+	Method setInaudibleBehavior(mustTick:Int, kill:Int) Override
 		WavStream_setInaudibleBehavior(asPtr, mustTick, kill)
 	End Method
 
@@ -953,18 +1005,18 @@ Type TSLWavStream Extends TSLLoadableAudioSource
 	bbdoc: Sets filter.
 	about: Set to NULL to clear the filter.
 	End Rem
-	Method setFilter(filterId:Int, filter:TSLFilter)
+	Method setFilter(filterId:Int, filter:TSLFilter) Override
 		' TODO
 	End Method
 
 	Rem
 	bbdoc: Stops all instances of this audio source.
 	End Rem
-	Method stop()
+	Method stop() Override
 		WavStream_stop(asPtr)
 	End Method
 
-	Method destroy()
+	Method destroy() Override
 		If asPtr Then
 			WavStream_destroy(asPtr)
 			asPtr = Null
@@ -978,7 +1030,7 @@ Type TSLWavStream Extends TSLLoadableAudioSource
 End Type
 
 Rem
-bbdoc: 
+bbdoc: Audio source for the sfxr sound effect synthesizer.
 End Rem
 Type TSLSfxr Extends TSLLoadableAudioSource
 
@@ -989,7 +1041,7 @@ Type TSLSfxr Extends TSLLoadableAudioSource
 	Rem
 	bbdoc: 
 	End Rem
-	Method Load:Int(filename:String)
+	Method Load:Int(filename:String) Override
 		Local s:Byte Ptr = filename.ToUTF8String()
 		Local res:Int = Sfxr_loadParams(asPtr, s)
 		MemFree(s)
@@ -999,14 +1051,14 @@ Type TSLSfxr Extends TSLLoadableAudioSource
 	Rem
 	bbdoc: 
 	End Rem
-	Method loadMem:Int(data:Byte Ptr, dataLen:Int, copy:Int = False, takeOwnership:Int = True)
+	Method loadMem:Int(data:Byte Ptr, dataLen:Int, copy:Int = False, takeOwnership:Int = True) Override
 		Return Sfxr_loadParamsMemEx(asPtr, data, dataLen, copy, takeOwnership)
 	End Method
 
 	Rem
 	bbdoc: 
 	End Rem
-	Method loadStream:Int(stream:TStream)
+	Method loadStream:Int(stream:TStream) Override
 		Local sf:TStreamFile = New TStreamFile.Create(stream)
 		Local res:Int = Sfxr_loadParamsFile(asPtr, sf.filePtr)
 		sf.Free()
@@ -1016,35 +1068,42 @@ Type TSLSfxr Extends TSLLoadableAudioSource
 	Rem
 	bbdoc: Sets default volume for instances.
 	End Rem
-	Method setVolume(volume:Float)
+	Method setVolume(volume:Float) Override
 		Sfxr_setVolume(asPtr, volume)
 	End Method
 	
 	Rem
 	bbdoc: Sets the looping of the instances created from this audio source.
 	End Rem
-	Method setLooping(loop:Int)
+	Method setLooping(loop:Int) Override
 		Sfxr_setLooping(asPtr, loop)
+	End Method
+
+	Rem
+	bbdoc: Sets whether audio should auto-stop when it ends or not.
+	End Rem
+	Method setAutoStop(autoStop:Int) Override
+		Sfxr_setAutoStop(asPtr, autoStop)
 	End Method
 
 	Rem
 	bbdoc: Sets the minimum and maximum distances for 3d audio source (closer to min distance = max vol)
 	End Rem
-	Method set3dMinMaxDistance(minDistance:Float, maxDistance:Float)
+	Method set3dMinMaxDistance(minDistance:Float, maxDistance:Float) Override
 		Sfxr_set3dMinMaxDistance(asPtr, minDistance, maxDistance)
 	End Method
 	
 	Rem
 	bbdoc: Sets attenuation model and rolloff factor for 3d audio source.
 	End Rem
-	Method set3dAttenuation(attenuationModel:Int, attenuationRolloffFactor:Float)
+	Method set3dAttenuation(attenuationModel:Int, attenuationRolloffFactor:Float) Override
 		Sfxr_set3dAttenuation(asPtr, attenuationModel, attenuationRolloffFactor)
 	End Method
 
 	Rem
 	bbdoc: Sets doppler factor to reduce or enhance doppler effect, default = 1.0
 	End Rem
-	Method set3dDopplerFactor(dopplerFactor:Float)
+	Method set3dDopplerFactor(dopplerFactor:Float) Override
 		Sfxr_set3dDopplerFactor(asPtr, dopplerFactor)
 	End Method
 
@@ -1052,21 +1111,21 @@ Type TSLSfxr Extends TSLLoadableAudioSource
 	bbdoc: Enables 3d processing.
 	about: Implicitly set by play3d calls.
 	End Rem
-	Method set3dListenerRelative(listenerRelative:Int)
+	Method set3dListenerRelative(listenerRelative:Int) Override
 		Sfxr_set3dListenerRelative(asPtr, listenerRelative)
 	End Method
 
 	Rem
 	bbdoc: Sets the coordinates for this audio source to be relative to listener's coordinates.
 	End Rem
-	Method set3dDistanceDelay(distanceDelay:Int)
+	Method set3dDistanceDelay(distanceDelay:Int) Override
 		Sfxr_set3dListenerRelative(asPtr, distanceDelay)
 	End Method
 
 	Rem
 	bbdoc: Enables delaying the start of the sound based on the distance.
 	End Rem
-	Method set3dCollider(collider:TSLAudioCollider)
+	Method set3dCollider(collider:TSLAudioCollider) Override
 		' TODO
 	End Method
 
@@ -1074,7 +1133,7 @@ Type TSLSfxr Extends TSLLoadableAudioSource
 	bbdoc: Sets a custom 3d audio collider.
 	about: Set to Null to disable.
 	End Rem
-	Method set3dColliderEx(collider:TSLAudioCollider, userData:Int)
+	Method set3dColliderEx(collider:TSLAudioCollider, userData:Int) Override
 		' TODO
 	End Method
 
@@ -1082,14 +1141,14 @@ Type TSLSfxr Extends TSLLoadableAudioSource
 	bbdoc: Sets a custom attenuator.
 	about: Set to Null to disable.
 	End Rem
-	Method set3dAttenuator(attenuator:TSLAudioAttenuator)
+	Method set3dAttenuator(attenuator:TSLAudioAttenuator) Override
 		' TODO
 	End Method
 
 	Rem
 	bbdoc: Sets behavior for inaudible sounds.
 	End Rem
-	Method setInaudibleBehavior(mustTick:Int, kill:Int)
+	Method setInaudibleBehavior(mustTick:Int, kill:Int) Override
 		Sfxr_setInaudibleBehavior(asPtr, mustTick, kill)
 	End Method
 
@@ -1097,18 +1156,18 @@ Type TSLSfxr Extends TSLLoadableAudioSource
 	bbdoc: Sets filter.
 	about: Set to NULL to clear the filter.
 	End Rem
-	Method setFilter(filterId:Int, filter:TSLFilter)
+	Method setFilter(filterId:Int, filter:TSLFilter) Override
 		' TODO
 	End Method
 
 	Rem
 	bbdoc: Stops all instances of this audio source.
 	End Rem
-	Method stop()
+	Method stop() Override
 		Sfxr_stop(asPtr)
 	End Method
 
-	Method destroy()
+	Method destroy() Override
 		If asPtr Then
 			Sfxr_destroy(asPtr)
 			asPtr = Null
@@ -1122,7 +1181,8 @@ Type TSLSfxr Extends TSLLoadableAudioSource
 End Type
 
 Rem
-bbdoc: 
+bbdoc: Audio source for MONOTONE tracker songs.
+about: See https://github.com/MobyGamer/MONOTONE
 End Rem
 Type TSLMonotone Extends TSLLoadableAudioSource
 
@@ -1133,7 +1193,7 @@ Type TSLMonotone Extends TSLLoadableAudioSource
 	Rem
 	bbdoc: 
 	End Rem
-	Method Load:Int(filename:String)
+	Method Load:Int(filename:String) Override
 		Local s:Byte Ptr = filename.ToUTF8String()
 		Local res:Int = Monotone_load(asPtr, s)
 		MemFree(s)
@@ -1143,14 +1203,14 @@ Type TSLMonotone Extends TSLLoadableAudioSource
 	Rem
 	bbdoc: 
 	End Rem
-	Method loadMem:Int(data:Byte Ptr, dataLen:Int, copy:Int = False, takeOwnership:Int = True)
+	Method loadMem:Int(data:Byte Ptr, dataLen:Int, copy:Int = False, takeOwnership:Int = True) Override
 		Return Monotone_loadMemEx(asPtr, data, dataLen, copy, takeOwnership)
 	End Method
 
 	Rem
 	bbdoc: 
 	End Rem
-	Method loadStream:Int(stream:TStream)
+	Method loadStream:Int(stream:TStream) Override
 		Local sf:TStreamFile = New TStreamFile.Create(stream)
 		Return Monotone_LoadFile(asPtr, sf.filePtr)
 	End Method
@@ -1158,35 +1218,42 @@ Type TSLMonotone Extends TSLLoadableAudioSource
 	Rem
 	bbdoc: Sets default volume for instances.
 	End Rem
-	Method setVolume(volume:Float)
+	Method setVolume(volume:Float) Override
 		Monotone_setVolume(asPtr, volume)
 	End Method
 	
 	Rem
 	bbdoc: Sets the looping of the instances created from this audio source.
 	End Rem
-	Method setLooping(loop:Int)
+	Method setLooping(loop:Int) Override
 		Monotone_setLooping(asPtr, loop)
+	End Method
+
+	Rem
+	bbdoc: Sets whether audio should auto-stop when it ends or not.
+	End Rem
+	Method setAutoStop(autoStop:Int) Override
+		Monotone_setAutoStop(asPtr, autoStop)
 	End Method
 
 	Rem
 	bbdoc: Sets the minimum and maximum distances for 3d audio source (closer to min distance = max vol)
 	End Rem
-	Method set3dMinMaxDistance(minDistance:Float, maxDistance:Float)
+	Method set3dMinMaxDistance(minDistance:Float, maxDistance:Float) Override
 		Monotone_set3dMinMaxDistance(asPtr, minDistance, maxDistance)
 	End Method
 	
 	Rem
 	bbdoc: Sets attenuation model and rolloff factor for 3d audio source.
 	End Rem
-	Method set3dAttenuation(attenuationModel:Int, attenuationRolloffFactor:Float)
+	Method set3dAttenuation(attenuationModel:Int, attenuationRolloffFactor:Float) Override
 		Monotone_set3dAttenuation(asPtr, attenuationModel, attenuationRolloffFactor)
 	End Method
 
 	Rem
 	bbdoc: Sets doppler factor to reduce or enhance doppler effect, default = 1.0
 	End Rem
-	Method set3dDopplerFactor(dopplerFactor:Float)
+	Method set3dDopplerFactor(dopplerFactor:Float) Override
 		Monotone_set3dDopplerFactor(asPtr, dopplerFactor)
 	End Method
 
@@ -1194,21 +1261,21 @@ Type TSLMonotone Extends TSLLoadableAudioSource
 	bbdoc: Enables 3d processing.
 	about: Implicitly set by play3d calls.
 	End Rem
-	Method set3dListenerRelative(listenerRelative:Int)
+	Method set3dListenerRelative(listenerRelative:Int) Override
 		Monotone_set3dListenerRelative(asPtr, listenerRelative)
 	End Method
 
 	Rem
 	bbdoc: Sets the coordinates for this audio source to be relative to listener's coordinates.
 	End Rem
-	Method set3dDistanceDelay(distanceDelay:Int)
+	Method set3dDistanceDelay(distanceDelay:Int) Override
 		Monotone_set3dListenerRelative(asPtr, distanceDelay)
 	End Method
 
 	Rem
 	bbdoc: Enables delaying the start of the sound based on the distance.
 	End Rem
-	Method set3dCollider(collider:TSLAudioCollider)
+	Method set3dCollider(collider:TSLAudioCollider) Override
 		' TODO
 	End Method
 
@@ -1216,7 +1283,7 @@ Type TSLMonotone Extends TSLLoadableAudioSource
 	bbdoc: Sets a custom 3d audio collider.
 	about: Set to Null to disable.
 	End Rem
-	Method set3dColliderEx(collider:TSLAudioCollider, userData:Int)
+	Method set3dColliderEx(collider:TSLAudioCollider, userData:Int) Override
 		' TODO
 	End Method
 
@@ -1224,14 +1291,14 @@ Type TSLMonotone Extends TSLLoadableAudioSource
 	bbdoc: Sets a custom attenuator.
 	about: Set to Null to disable.
 	End Rem
-	Method set3dAttenuator(attenuator:TSLAudioAttenuator)
+	Method set3dAttenuator(attenuator:TSLAudioAttenuator) Override
 		' TODO
 	End Method
 
 	Rem
 	bbdoc: Sets behavior for inaudible sounds.
 	End Rem
-	Method setInaudibleBehavior(mustTick:Int, kill:Int)
+	Method setInaudibleBehavior(mustTick:Int, kill:Int) Override
 		Monotone_setInaudibleBehavior(asPtr, mustTick, kill)
 	End Method
 
@@ -1239,18 +1306,18 @@ Type TSLMonotone Extends TSLLoadableAudioSource
 	bbdoc: Sets filter.
 	about: Set to NULL to clear the filter.
 	End Rem
-	Method setFilter(filterId:Int, filter:TSLFilter)
+	Method setFilter(filterId:Int, filter:TSLFilter) Override
 		' TODO
 	End Method
 
 	Rem
 	bbdoc: Stops all instances of this audio source.
 	End Rem
-	Method stop()
+	Method stop() Override
 		Monotone_stop(asPtr)
 	End Method
 
-	Method destroy()
+	Method destroy() Override
 		If asPtr Then
 			Monotone_destroy(asPtr)
 			asPtr = Null
@@ -1264,7 +1331,7 @@ Type TSLMonotone Extends TSLLoadableAudioSource
 End Type
 
 Rem
-bbdoc: 
+bbdoc: Audio source for TED and SID soundchip register write dumps.
 End Rem
 Type TSLTedSid Extends TSLLoadableAudioSource
 
@@ -1275,7 +1342,7 @@ Type TSLTedSid Extends TSLLoadableAudioSource
 	Rem
 	bbdoc: 
 	End Rem
-	Method Load:Int(filename:String)
+	Method Load:Int(filename:String) Override
 		Local s:Byte Ptr = filename.ToUTF8String()
 		Local res:Int = TedSid_load(asPtr, s)
 		MemFree(s)
@@ -1285,14 +1352,14 @@ Type TSLTedSid Extends TSLLoadableAudioSource
 	Rem
 	bbdoc: 
 	End Rem
-	Method loadMem:Int(data:Byte Ptr, dataLen:Int, copy:Int = False, takeOwnership:Int = True)
+	Method loadMem:Int(data:Byte Ptr, dataLen:Int, copy:Int = False, takeOwnership:Int = True) Override
 		Return TedSid_loadMemEx(asPtr, data, dataLen, copy, takeOwnership)
 	End Method
 
 	Rem
 	bbdoc: 
 	End Rem
-	Method loadStream:Int(stream:TStream)
+	Method loadStream:Int(stream:TStream) Override
 		Local sf:TStreamFile = New TStreamFile.Create(stream)
 		Return TedSid_LoadFile(asPtr, sf.filePtr)
 	End Method
@@ -1300,35 +1367,42 @@ Type TSLTedSid Extends TSLLoadableAudioSource
 	Rem
 	bbdoc: Sets default volume for instances.
 	End Rem
-	Method setVolume(volume:Float)
+	Method setVolume(volume:Float) Override
 		TedSid_setVolume(asPtr, volume)
 	End Method
 	
 	Rem
 	bbdoc: Sets the looping of the instances created from this audio source.
 	End Rem
-	Method setLooping(loop:Int)
+	Method setLooping(loop:Int) Override
 		TedSid_setLooping(asPtr, loop)
+	End Method
+
+	Rem
+	bbdoc: Sets whether audio should auto-stop when it ends or not.
+	End Rem
+	Method setAutoStop(autoStop:Int) Override
+		TedSid_setAutoStop(asPtr, autoStop)
 	End Method
 
 	Rem
 	bbdoc: Sets the minimum and maximum distances for 3d audio source (closer to min distance = max vol)
 	End Rem
-	Method set3dMinMaxDistance(minDistance:Float, maxDistance:Float)
+	Method set3dMinMaxDistance(minDistance:Float, maxDistance:Float) Override
 		TedSid_set3dMinMaxDistance(asPtr, minDistance, maxDistance)
 	End Method
 	
 	Rem
 	bbdoc: Sets attenuation model and rolloff factor for 3d audio source.
 	End Rem
-	Method set3dAttenuation(attenuationModel:Int, attenuationRolloffFactor:Float)
+	Method set3dAttenuation(attenuationModel:Int, attenuationRolloffFactor:Float) Override
 		TedSid_set3dAttenuation(asPtr, attenuationModel, attenuationRolloffFactor)
 	End Method
 
 	Rem
 	bbdoc: Sets doppler factor to reduce or enhance doppler effect, default = 1.0
 	End Rem
-	Method set3dDopplerFactor(dopplerFactor:Float)
+	Method set3dDopplerFactor(dopplerFactor:Float) Override
 		TedSid_set3dDopplerFactor(asPtr, dopplerFactor)
 	End Method
 
@@ -1336,21 +1410,21 @@ Type TSLTedSid Extends TSLLoadableAudioSource
 	bbdoc: Enables 3d processing.
 	about: Implicitly set by play3d calls.
 	End Rem
-	Method set3dListenerRelative(listenerRelative:Int)
+	Method set3dListenerRelative(listenerRelative:Int) Override
 		TedSid_set3dListenerRelative(asPtr, listenerRelative)
 	End Method
 
 	Rem
 	bbdoc: Sets the coordinates for this audio source to be relative to listener's coordinates.
 	End Rem
-	Method set3dDistanceDelay(distanceDelay:Int)
+	Method set3dDistanceDelay(distanceDelay:Int) Override
 		TedSid_set3dListenerRelative(asPtr, distanceDelay)
 	End Method
 
 	Rem
 	bbdoc: Enables delaying the start of the sound based on the distance.
 	End Rem
-	Method set3dCollider(collider:TSLAudioCollider)
+	Method set3dCollider(collider:TSLAudioCollider) Override
 		' TODO
 	End Method
 
@@ -1358,7 +1432,7 @@ Type TSLTedSid Extends TSLLoadableAudioSource
 	bbdoc: Sets a custom 3d audio collider.
 	about: Set to Null to disable.
 	End Rem
-	Method set3dColliderEx(collider:TSLAudioCollider, userData:Int)
+	Method set3dColliderEx(collider:TSLAudioCollider, userData:Int) Override
 		' TODO
 	End Method
 
@@ -1366,14 +1440,14 @@ Type TSLTedSid Extends TSLLoadableAudioSource
 	bbdoc: Sets a custom attenuator.
 	about: Set to Null to disable.
 	End Rem
-	Method set3dAttenuator(attenuator:TSLAudioAttenuator)
+	Method set3dAttenuator(attenuator:TSLAudioAttenuator) Override
 		' TODO
 	End Method
 
 	Rem
 	bbdoc: Sets behavior for inaudible sounds.
 	End Rem
-	Method setInaudibleBehavior(mustTick:Int, kill:Int)
+	Method setInaudibleBehavior(mustTick:Int, kill:Int) Override
 		TedSid_setInaudibleBehavior(asPtr, mustTick, kill)
 	End Method
 
@@ -1381,18 +1455,18 @@ Type TSLTedSid Extends TSLLoadableAudioSource
 	bbdoc: Sets filter.
 	about: Set to NULL to clear the filter.
 	End Rem
-	Method setFilter(filterId:Int, filter:TSLFilter)
+	Method setFilter(filterId:Int, filter:TSLFilter) Override
 		' TODO
 	End Method
 
 	Rem
 	bbdoc: Stops all instances of this audio source.
 	End Rem
-	Method stop()
+	Method stop() Override
 		TedSid_stop(asPtr)
 	End Method
 
-	Method destroy()
+	Method destroy() Override
 		If asPtr Then
 			TedSid_destroy(asPtr)
 			asPtr = Null
@@ -1405,6 +1479,156 @@ Type TSLTedSid Extends TSLLoadableAudioSource
 
 End Type
 
+
+Rem
+bbdoc: Audio source for AY files in ZAK format.
+about: For converting to ZAK, see https://github.com/jarikomppa/zak
+End Rem
+Type TSLAy Extends TSLLoadableAudioSource
+
+	Method New()
+		asPtr = Ay_create()
+	End Method
+	
+	Rem
+	bbdoc: 
+	End Rem
+	Method Load:Int(filename:String) Override
+		Local s:Byte Ptr = filename.ToUTF8String()
+		Local res:Int = Ay_load(asPtr, s)
+		MemFree(s)
+		Return res
+	End Method
+	
+	Rem
+	bbdoc: 
+	End Rem
+	Method loadMem:Int(data:Byte Ptr, dataLen:Int, copy:Int = False, takeOwnership:Int = True) Override
+		Return Ay_loadMemEx(asPtr, data, dataLen, copy, takeOwnership)
+	End Method
+
+	Rem
+	bbdoc: 
+	End Rem
+	Method loadStream:Int(stream:TStream) Override
+		Local sf:TStreamFile = New TStreamFile.Create(stream)
+		Return Ay_LoadFile(asPtr, sf.filePtr)
+	End Method
+
+	Rem
+	bbdoc: Sets default volume for instances.
+	End Rem
+	Method setVolume(volume:Float) Override
+		Ay_setVolume(asPtr, volume)
+	End Method
+	
+	Rem
+	bbdoc: Sets the looping of the instances created from this audio source.
+	End Rem
+	Method setLooping(loop:Int) Override
+		Ay_setLooping(asPtr, loop)
+	End Method
+
+	Rem
+	bbdoc: Sets whether audio should auto-stop when it ends or not.
+	End Rem
+	Method setAutoStop(autoStop:Int) Override
+		Ay_setAutoStop(asPtr, autoStop)
+	End Method
+
+	Rem
+	bbdoc: Sets the minimum and maximum distances for 3d audio source (closer to min distance = max vol)
+	End Rem
+	Method set3dMinMaxDistance(minDistance:Float, maxDistance:Float) Override
+		Ay_set3dMinMaxDistance(asPtr, minDistance, maxDistance)
+	End Method
+	
+	Rem
+	bbdoc: Sets attenuation model and rolloff factor for 3d audio source.
+	End Rem
+	Method set3dAttenuation(attenuationModel:Int, attenuationRolloffFactor:Float) Override
+		Ay_set3dAttenuation(asPtr, attenuationModel, attenuationRolloffFactor)
+	End Method
+
+	Rem
+	bbdoc: Sets doppler factor to reduce or enhance doppler effect, default = 1.0
+	End Rem
+	Method set3dDopplerFactor(dopplerFactor:Float) Override
+		Ay_set3dDopplerFactor(asPtr, dopplerFactor)
+	End Method
+
+	Rem
+	bbdoc: Enables 3d processing.
+	about: Implicitly set by play3d calls.
+	End Rem
+	Method set3dListenerRelative(listenerRelative:Int) Override
+		Ay_set3dListenerRelative(asPtr, listenerRelative)
+	End Method
+
+	Rem
+	bbdoc: Sets the coordinates for this audio source to be relative to listener's coordinates.
+	End Rem
+	Method set3dDistanceDelay(distanceDelay:Int) Override
+		Ay_set3dListenerRelative(asPtr, distanceDelay)
+	End Method
+
+	Rem
+	bbdoc: Enables delaying the start of the sound based on the distance.
+	End Rem
+	Method set3dCollider(collider:TSLAudioCollider) Override
+		' TODO
+	End Method
+
+	Rem
+	bbdoc: Sets a custom 3d audio collider.
+	about: Set to Null to disable.
+	End Rem
+	Method set3dColliderEx(collider:TSLAudioCollider, userData:Int) Override
+		' TODO
+	End Method
+
+	Rem
+	bbdoc: Sets a custom attenuator.
+	about: Set to Null to disable.
+	End Rem
+	Method set3dAttenuator(attenuator:TSLAudioAttenuator) Override
+		' TODO
+	End Method
+
+	Rem
+	bbdoc: Sets behavior for inaudible sounds.
+	End Rem
+	Method setInaudibleBehavior(mustTick:Int, kill:Int) Override
+		Ay_setInaudibleBehavior(asPtr, mustTick, kill)
+	End Method
+
+	Rem
+	bbdoc: Sets filter.
+	about: Set to NULL to clear the filter.
+	End Rem
+	Method setFilter(filterId:Int, filter:TSLFilter) Override
+		' TODO
+	End Method
+
+	Rem
+	bbdoc: Stops all instances of this audio source.
+	End Rem
+	Method stop() Override
+		Ay_stop(asPtr)
+	End Method
+
+	Method destroy() Override
+		If asPtr Then
+			Ay_destroy(asPtr)
+			asPtr = Null
+		End If
+	End Method
+
+	Method Delete()
+		destroy()
+	End Method
+
+End Type
 
 Type TSLAudioCollider
 End Type

@@ -21,6 +21,9 @@
 '
 SuperStrict
 
+Rem
+bbdoc: Mod music loader.
+End Rem
 Module Audio.modloader
 
 Import Audio.SoloudAudio
@@ -29,7 +32,9 @@ Import "common.bmx"
 
 
 Rem
-bbdoc: 
+bbdoc: Audio source for Openmpt supported music.
+about: Formats include 669, amf, ams, dbm, digi, dmf, dsm, far, gdm, ice, imf, it, itp, j2b, m15,
+mdl, med, mid, mo3, mod, mptm, mt2, mtm, okt, plm, psm, ptm, s3m, stm, ult, umx, wow and xm.
 End Rem
 Type TSLOpenmpt Extends TSLLoadableAudioSource
 
@@ -40,7 +45,7 @@ Type TSLOpenmpt Extends TSLLoadableAudioSource
 	Rem
 	bbdoc: 
 	End Rem
-	Method Load:Int(filename:String)
+	Method Load:Int(filename:String) Override
 		Local s:Byte Ptr = filename.ToUTF8String()
 		Local res:Int = Openmpt_load(asPtr, s)
 		MemFree(s)
@@ -50,14 +55,14 @@ Type TSLOpenmpt Extends TSLLoadableAudioSource
 	Rem
 	bbdoc: 
 	End Rem
-	Method loadMem:Int(data:Byte Ptr, dataLen:Int, copy:Int = False, takeOwnership:Int = True)
+	Method loadMem:Int(data:Byte Ptr, dataLen:Int, copy:Int = False, takeOwnership:Int = True) Override
 		Return Openmpt_loadMemEx(asPtr, data, dataLen, copy, takeOwnership)
 	End Method
 
 	Rem
 	bbdoc: 
 	End Rem
-	Method loadStream:Int(stream:TStream)
+	Method loadStream:Int(stream:TStream) Override
 		Local sf:TStreamFile = New TStreamFile.Create(stream)
 		Return Openmpt_LoadFile(asPtr, sf.filePtr)
 	End Method
@@ -65,35 +70,42 @@ Type TSLOpenmpt Extends TSLLoadableAudioSource
 	Rem
 	bbdoc: Sets default volume for instances.
 	End Rem
-	Method setVolume(volume:Float)
+	Method setVolume(volume:Float) Override
 		Openmpt_setVolume(asPtr, volume)
 	End Method
 	
 	Rem
 	bbdoc: Sets the looping of the instances created from this audio source.
 	End Rem
-	Method setLooping(loop:Int)
+	Method setLooping(loop:Int) Override
 		Openmpt_setLooping(asPtr, loop)
+	End Method
+
+	Rem
+	bbdoc: Set whether audio should auto-stop when it ends or not.
+	End Rem
+	Method setAutoStop(autoStop:Int) Override
+		Openmpt_setAutoStop(asPtr, autoStop)
 	End Method
 
 	Rem
 	bbdoc: Sets the minimum and maximum distances for 3d audio source (closer to min distance = max vol)
 	End Rem
-	Method set3dMinMaxDistance(minDistance:Float, maxDistance:Float)
+	Method set3dMinMaxDistance(minDistance:Float, maxDistance:Float) Override
 		Openmpt_set3dMinMaxDistance(asPtr, minDistance, maxDistance)
 	End Method
 	
 	Rem
 	bbdoc: Sets attenuation model and rolloff factor for 3d audio source.
 	End Rem
-	Method set3dAttenuation(attenuationModel:Int, attenuationRolloffFactor:Float)
+	Method set3dAttenuation(attenuationModel:Int, attenuationRolloffFactor:Float) Override
 		Openmpt_set3dAttenuation(asPtr, attenuationModel, attenuationRolloffFactor)
 	End Method
 
 	Rem
 	bbdoc: Sets doppler factor to reduce or enhance doppler effect, default = 1.0
 	End Rem
-	Method set3dDopplerFactor(dopplerFactor:Float)
+	Method set3dDopplerFactor(dopplerFactor:Float) Override
 		Openmpt_set3dDopplerFactor(asPtr, dopplerFactor)
 	End Method
 
@@ -101,21 +113,21 @@ Type TSLOpenmpt Extends TSLLoadableAudioSource
 	bbdoc: Enables 3d processing.
 	about: Implicitly set by play3d calls.
 	End Rem
-	Method set3dListenerRelative(listenerRelative:Int)
+	Method set3dListenerRelative(listenerRelative:Int) Override
 		Openmpt_set3dListenerRelative(asPtr, listenerRelative)
 	End Method
 
 	Rem
 	bbdoc: Sets the coordinates for this audio source to be relative to listener's coordinates.
 	End Rem
-	Method set3dDistanceDelay(distanceDelay:Int)
+	Method set3dDistanceDelay(distanceDelay:Int) Override
 		Openmpt_set3dListenerRelative(asPtr, distanceDelay)
 	End Method
 
 	Rem
 	bbdoc: Enables delaying the start of the sound based on the distance.
 	End Rem
-	Method set3dCollider(collider:TSLAudioCollider)
+	Method set3dCollider(collider:TSLAudioCollider) Override
 		' TODO
 	End Method
 
@@ -123,7 +135,7 @@ Type TSLOpenmpt Extends TSLLoadableAudioSource
 	bbdoc: Sets a custom 3d audio collider.
 	about: Set to Null to disable.
 	End Rem
-	Method set3dColliderEx(collider:TSLAudioCollider, userData:Int)
+	Method set3dColliderEx(collider:TSLAudioCollider, userData:Int) Override
 		' TODO
 	End Method
 
@@ -131,14 +143,14 @@ Type TSLOpenmpt Extends TSLLoadableAudioSource
 	bbdoc: Sets a custom attenuator.
 	about: Set to Null to disable.
 	End Rem
-	Method set3dAttenuator(attenuator:TSLAudioAttenuator)
+	Method set3dAttenuator(attenuator:TSLAudioAttenuator) Override
 		' TODO
 	End Method
 
 	Rem
 	bbdoc: Sets behavior for inaudible sounds.
 	End Rem
-	Method setInaudibleBehavior(mustTick:Int, kill:Int)
+	Method setInaudibleBehavior(mustTick:Int, kill:Int) Override
 		Openmpt_setInaudibleBehavior(asPtr, mustTick, kill)
 	End Method
 
@@ -146,18 +158,18 @@ Type TSLOpenmpt Extends TSLLoadableAudioSource
 	bbdoc: Sets filter.
 	about: Set to NULL to clear the filter.
 	End Rem
-	Method setFilter(filterId:Int, filter:TSLFilter)
+	Method setFilter(filterId:Int, filter:TSLFilter) Override
 		' TODO
 	End Method
 
 	Rem
 	bbdoc: Stops all instances of this audio source.
 	End Rem
-	Method stop()
+	Method stop() Override
 		Openmpt_stop(asPtr)
 	End Method
 
-	Method destroy()
+	Method destroy() Override
 		If asPtr Then
 			Openmpt_destroy(asPtr)
 			asPtr = Null
@@ -174,7 +186,7 @@ New TSoloudModLoader(1)
 
 Type TSoloudModLoader Extends TAudioSourceLoader
 
-	Method LoadAudioSource:TSLLoadableAudioSource( stream:TStream )
+	Method LoadAudioSource:TSLLoadableAudioSource( stream:TStream ) Override
 		Local sound:TSLLoadableAudioSource = New TSLOpenmpt
 		If sound.loadStream(stream) = SO_NO_ERROR Then
 			Return sound

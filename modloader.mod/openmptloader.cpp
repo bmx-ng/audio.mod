@@ -79,6 +79,12 @@ void Openmpt_setLooping(void * aClassPtr, int aLoop)
 	cl->setLooping(!!aLoop);
 }
 
+void Openmpt_setAutoStop(void * aClassPtr, int aAutoStop)
+{
+	Openmpt * cl = (Openmpt *)aClassPtr;
+	cl->setAutoStop(!!aAutoStop);
+}
+
 void Openmpt_set3dMinMaxDistance(void * aClassPtr, float aMinDistance, float aMaxDistance)
 {
 	Openmpt * cl = (Openmpt *)aClassPtr;

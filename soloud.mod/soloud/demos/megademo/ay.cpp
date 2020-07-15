@@ -1,6 +1,6 @@
 /*
 SoLoud audio engine
-Copyright (c) 2013-2015 Jari Komppa
+Copyright (c) 2020 Jari Komppa
 
 This software is provided 'as-is', without any express or implied
 warranty. In no event will the authors be held liable for any damages
@@ -30,34 +30,32 @@ freely, subject to the following restrictions:
 #include "soloud_demo_framework.h"
 
 #include "soloud.h"
-#include "soloud_tedsid.h"
+#include "soloud_ay.h"
 #include "soloud_biquadresonantfilter.h"
 #include "soloud_echofilter.h"
 #include "soloud_dcremovalfilter.h"
 #include "soloud_bassboostfilter.h"
 
-namespace tedsid
+namespace ay
 {
 
 	SoLoud::Soloud gSoloud;
-	SoLoud::TedSid gMusic1, gMusic2;
+	SoLoud::Ay gMusic;
 	SoLoud::BiquadResonantFilter gBiquad;
 	SoLoud::EchoFilter gEcho;
 	SoLoud::DCRemovalFilter gDCRemoval;
 	SoLoud::BassboostFilter gBassboost;
-	int gMusichandle1, gMusichandle2;
+	int gMusichandle;
 
 	// Entry point
 	int DemoEntry(int argc, char *argv[])
 	{
-		gMusic1.load("audio/Angel_Project.sid_sid.zak");
-		gMusic2.load("audio/ted_storm.prg_ted.zak");
+		gMusic.load("audio/adversary.pt3_2ay.zak");
 
 		gEcho.setParams(0.2f, 0.5f, 0.05f);
 		gBiquad.setParams(SoLoud::BiquadResonantFilter::LOWPASS, 4000, 2);
 
-		gMusic1.setLooping(1);
-		gMusic2.setLooping(1);
+		gMusic.setLooping(1);
 
 		gSoloud.setGlobalFilter(0, &gBiquad);
 		gSoloud.setGlobalFilter(1, &gBassboost);
@@ -66,17 +64,13 @@ namespace tedsid
 
 		gSoloud.init(SoLoud::Soloud::CLIP_ROUNDOFF | SoLoud::Soloud::ENABLE_VISUALIZATION);
 
-		gMusichandle1 = gSoloud.play(gMusic1);
-		gMusichandle2 = gSoloud.play(gMusic2, 0);
+		gMusichandle = gSoloud.play(gMusic);
 		return 0;
 	}
 
 	float filter_param0[4] = { 0, 0, 0, 0 };
 	float filter_param1[4] = { 1000, 2, 0, 0 };
 	float filter_param2[4] = { 2, 0,  0, 0 };
-
-	float song1volume = 1;
-	float song2volume = 0;
 
 	void DemoMainloop()
 	{
@@ -101,34 +95,21 @@ namespace tedsid
 		ImGui::Begin("Output");
 		ImGui::PlotLines("##Wave", buf, 256, 0, "Wave", -1, 1, ImVec2(264, 80));
 		ImGui::PlotHistogram("##FFT", fft, 256 / 2, 0, "FFT", 0, 10, ImVec2(264, 80), 8);
-		float sidregs[32 + 5];
+		float ayregs[32];
 		int i;
 		for (i = 0; i < 32; i++)
-			sidregs[i] = gSoloud.getInfo(gMusichandle1, i);
-		for (i = 0; i < 5; i++)
-			sidregs[32 + i] = gSoloud.getInfo(gMusichandle2, i + 64);
-		ImGui::PlotHistogram("##SID", sidregs, 32 + 5, 0, "          SID               TED", 0, 0xff, ImVec2(264, 80), 4);
+			ayregs[i] = gSoloud.getInfo(gMusichandle, i);
+		ImGui::PlotHistogram("##AY", ayregs, 32, 0, "", 0, 0xff, ImVec2(264, 80), 4);
 
-		ImGui::Text("SID: %02X %02X %02X %02X %02X %02X %02X %02X", (int)gSoloud.getInfo(gMusichandle1, 0), (int)gSoloud.getInfo(gMusichandle1, 1), (int)gSoloud.getInfo(gMusichandle1, 2), (int)gSoloud.getInfo(gMusichandle1, 3), (int)gSoloud.getInfo(gMusichandle1, 4), (int)gSoloud.getInfo(gMusichandle1, 5), (int)gSoloud.getInfo(gMusichandle1, 6), (int)gSoloud.getInfo(gMusichandle1, 7));
-		ImGui::Text("     %02X %02X %02X %02X %02X %02X %02X %02X", (int)gSoloud.getInfo(gMusichandle1, 8), (int)gSoloud.getInfo(gMusichandle1, 9), (int)gSoloud.getInfo(gMusichandle1, 10), (int)gSoloud.getInfo(gMusichandle1, 11), (int)gSoloud.getInfo(gMusichandle1, 12), (int)gSoloud.getInfo(gMusichandle1, 13), (int)gSoloud.getInfo(gMusichandle1, 14), (int)gSoloud.getInfo(gMusichandle1, 15));
-		ImGui::Text("     %02X %02X %02X %02X %02X %02X %02X %02X", (int)gSoloud.getInfo(gMusichandle1, 16), (int)gSoloud.getInfo(gMusichandle1, 17), (int)gSoloud.getInfo(gMusichandle1, 18), (int)gSoloud.getInfo(gMusichandle1, 19), (int)gSoloud.getInfo(gMusichandle1, 20), (int)gSoloud.getInfo(gMusichandle1, 21), (int)gSoloud.getInfo(gMusichandle1, 22), (int)gSoloud.getInfo(gMusichandle1, 23));
-		ImGui::Text("     %02X %02X %02X %02X %02X %02X %02X %02X", (int)gSoloud.getInfo(gMusichandle1, 24), (int)gSoloud.getInfo(gMusichandle1, 25), (int)gSoloud.getInfo(gMusichandle1, 26), (int)gSoloud.getInfo(gMusichandle1, 27), (int)gSoloud.getInfo(gMusichandle1, 28), (int)gSoloud.getInfo(gMusichandle1, 29), (int)gSoloud.getInfo(gMusichandle1, 30), (int)gSoloud.getInfo(gMusichandle1, 31));
-		ImGui::Text("TED: %02X %02X %02X %02X %02X", (int)gSoloud.getInfo(gMusichandle2, 64), (int)gSoloud.getInfo(gMusichandle2, 65), (int)gSoloud.getInfo(gMusichandle2, 66), (int)gSoloud.getInfo(gMusichandle2, 67), (int)gSoloud.getInfo(gMusichandle2, 68));
+		ImGui::Text("AY1: %02X %02X %02X %02X %02X %02X %02X %02X", (int)ayregs[0], (int)ayregs[1], (int)ayregs[2], (int)ayregs[3], (int)ayregs[4], (int)ayregs[5], (int)ayregs[6], (int)ayregs[7]);
+		ImGui::Text("     %02X %02X %02X %02X %02X %02X", (int)ayregs[8], (int)ayregs[9], (int)ayregs[10], (int)ayregs[11], (int)ayregs[12], (int)ayregs[13]);
+		ImGui::Text("AY2: %02X %02X %02X %02X %02X %02X %02X %02X", (int)ayregs[16], (int)ayregs[17], (int)ayregs[18], (int)ayregs[19], (int)ayregs[20], (int)ayregs[21], (int)ayregs[22], (int)ayregs[23]);
+		ImGui::Text("     %02X %02X %02X %02X %02X %02X", (int)ayregs[24], (int)ayregs[25], (int)ayregs[26], (int)ayregs[27], (int)ayregs[28], (int)ayregs[29]);
+
 		ImGui::End();
 
 		ONCE(ImGui::SetNextWindowPos(ImVec2(20, 20)));
 		ImGui::Begin("Control");
-		ImGui::Text("Song volumes");
-
-		if (ImGui::SliderFloat("Song1 vol", &song1volume, 0, 1))
-		{
-			gSoloud.setVolume(gMusichandle1, song1volume);
-		}
-		if (ImGui::SliderFloat("Song2 vol", &song2volume, 0, 1))
-		{
-			gSoloud.setVolume(gMusichandle2, song2volume);
-		}
-		ImGui::Separator();
 		ImGui::Text("Biquad filter (lowpass)");
 		ImGui::SliderFloat("Wet##4", &filter_param0[0], 0, 1);
 		ImGui::SliderFloat("Frequency##4", &filter_param1[0], 0, 8000);
@@ -148,12 +129,12 @@ namespace tedsid
 	}
 }
 
-int DemoEntry_tedsid(int argc, char *argv[])
+int DemoEntry_ay(int argc, char *argv[])
 {
-	return tedsid::DemoEntry(argc, argv);
+	return ay::DemoEntry(argc, argv);
 }
 
-void DemoMainloop_tedsid()
+void DemoMainloop_ay()
 {
-	return tedsid::DemoMainloop();
+	return ay::DemoMainloop();
 }
