@@ -103,7 +103,7 @@ Type TPulseAudioSoloudAudioDriver Extends TSDLSoloudAudioDriver
 	
 End Type
 
-Type TOSSSoloudAudioDriver Extends TSoloudAudioDriver
+Type TOSSSoloudAudioDriver Extends TSDLSoloudAudioDriver
 
 	Method Name$() Override
 		Return "SoLoud::OSS"
@@ -116,7 +116,7 @@ Type TOSSSoloudAudioDriver Extends TSoloudAudioDriver
 	
 End Type
 
-Type TNASSoloudAudioDriver Extends TSoloudAudioDriver
+Type TNASSoloudAudioDriver Extends TSDLSoloudAudioDriver
 
 	Method Name$() Override
 		Return "SoLoud::NAS"
