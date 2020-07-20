@@ -23,6 +23,9 @@ SuperStrict
 
 Import Audio.Soloud
 
+?linux
+Import "-ldl"
+?
 Import "source.bmx"
 
 Private
