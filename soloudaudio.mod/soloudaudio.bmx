@@ -27,10 +27,12 @@ about: Provides Soloud driver for use with the BRL.Audio module.
 End Rem
 Module Audio.soloudaudio
 
-ModuleInfo "Version: 1.01"
+ModuleInfo "Version: 1.02"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: 2016-2020 Bruce A Henderson"
 
+ModuleInfo "History: 1.02"
+ModuleInfo "History: Fixed loader priority ordering."
 ModuleInfo "History: 1.01"
 ModuleInfo "History: Added support for Ay (in .zap format) loading."
 ModuleInfo "History: 1.00"
@@ -406,6 +408,7 @@ Type TAudioSourceLoader
 	Field _priority:Int
 	
 	Method New(priority:Int)
+		Self._priority = priority
 		Local loader:TAudioSourceLoader = audio_loaders
 		Local last:TAudioSourceLoader
 		While loader
