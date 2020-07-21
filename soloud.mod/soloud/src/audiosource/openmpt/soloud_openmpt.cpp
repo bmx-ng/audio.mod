@@ -32,6 +32,7 @@ extern "C"
 	void * openmpt_module_create_from_memory(const void * filedata, size_t filesize, void *logfunc, void * user,void * ctls);
 	void openmpt_module_destroy(void * mod);
 	int openmpt_module_read_float_stereo(void * mod, int samplerate, size_t count, float * left, float * right);
+	double openmpt_module_set_position_seconds(void * mod, double seconds);		
 }
 
 namespace SoLoud
@@ -65,6 +66,13 @@ namespace SoLoud
 		}
 
 		return outofs;
+	}
+
+	result OpenmptInstance::rewind()
+	{
+		openmpt_module_set_position_seconds(mModfile, 0.0f);
+		mPlaying = 1;
+		return 0;
 	}
 
 	bool OpenmptInstance::hasEnded()

@@ -42,6 +42,7 @@ namespace SoLoud
 		OpenmptInstance(Openmpt *aParent);
 		virtual ~OpenmptInstance();
 		virtual unsigned int getAudio(float *aBuffer, unsigned int aSamplesToRead, unsigned int aBufferSize);
+		virtual result rewind();
 		virtual bool hasEnded();
 	};
 
