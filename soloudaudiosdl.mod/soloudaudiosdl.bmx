@@ -161,3 +161,5 @@ Type TDefaultSoloudAudioDriver Extends TCoreAudioSoloudAudioDriver
 
 End Type
 ?
+
+SetAudioDriver "SoLoud"

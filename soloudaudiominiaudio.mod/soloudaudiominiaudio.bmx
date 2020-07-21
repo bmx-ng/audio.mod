@@ -26,8 +26,6 @@ Module Audio.SoloudAudioMiniAudio
 Import Audio.SoloudMiniAudio
 Import Audio.SoloudAudio
 
-New TMiniAudioSoloudAudioDriver
-
 Type TMiniAudioSoloudAudioDriver Extends TSoloudAudioDriver
 	Method Backend:Int()
 		Return SOLOUD_MINIAUDIO
@@ -163,3 +161,5 @@ Type TDefaultSoloudAudioDriver Extends TCoreAudioSoloudAudioDriver
 
 End Type
 ?
+
+SetAudioDriver "SoLoud"
