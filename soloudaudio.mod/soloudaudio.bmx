@@ -229,16 +229,8 @@ Type TSoloudSound Extends TSound
 	Function TryLoadSound:TSLLoadableAudioSource(stream:TStream, flags:Int)
 		Local sound:TSLLoadableAudioSource
 		
-		If flags & SOUND_STREAM Then
-			sound = New TSLWavStream
-			If sound.loadStream(stream) = SO_NO_ERROR Then
-				Return sound
-			End If
-			sound.destroy()
-		End If
-		
 		While audio_loaders
-			sound = audio_loaders.LoadAudioSource(stream)
+			sound = audio_loaders.LoadAudioSource(stream, flags)
 			If sound Then
 				Return sound
 			End If
@@ -435,13 +427,23 @@ Type TAudioSourceLoader
 	returns: A new audio sample object, or Null if sample could not be loaded
 	about: Extending types must implement this method.
 	End Rem
-	Method LoadAudioSource:TSLLoadableAudioSource( stream:TStream ) Abstract
+	Method LoadAudioSource:TSLLoadableAudioSource( stream:TStream, flags:Int ) Abstract
 End Type
 
 Type TSoloudWavLoader Extends TAudioSourceLoader
 
-	Method LoadAudioSource:TSLLoadableAudioSource( stream:TStream )
-		Local sound:TSLLoadableAudioSource = New TSLWav
+	Method LoadAudioSource:TSLLoadableAudioSource( stream:TStream, flags:Int )
+		Local sound:TSLLoadableAudioSource
+
+		If flags & SOUND_STREAM Then
+			sound = New TSLWavStream
+			If sound.loadStream(stream) = SO_NO_ERROR Then
+				Return sound
+			End If
+			sound.destroy()
+		End If
+		
+		sound = New TSLWav
 		If sound.loadStream(stream) = SO_NO_ERROR Then
 			Return sound
 		End If
@@ -452,7 +454,7 @@ End Type
 
 Type TSoloudMonotoneLoader Extends TAudioSourceLoader
 
-	Method LoadAudioSource:TSLLoadableAudioSource( stream:TStream )
+	Method LoadAudioSource:TSLLoadableAudioSource( stream:TStream, flags:Int )
 		Local sound:TSLLoadableAudioSource = New TSLMonotone
 		If sound.loadStream(stream) = SO_NO_ERROR Then
 			Return sound
@@ -464,7 +466,7 @@ End Type
 
 Type TSoloudAyLoader Extends TAudioSourceLoader
 
-	Method LoadAudioSource:TSLLoadableAudioSource( stream:TStream )
+	Method LoadAudioSource:TSLLoadableAudioSource( stream:TStream, flags:Int )
 		Local sound:TSLLoadableAudioSource = New TSLAy
 		If sound.loadStream(stream) = SO_NO_ERROR Then
 			Return sound

@@ -186,7 +186,7 @@ New TSoloudModLoader(1)
 
 Type TSoloudModLoader Extends TAudioSourceLoader
 
-	Method LoadAudioSource:TSLLoadableAudioSource( stream:TStream ) Override
+	Method LoadAudioSource:TSLLoadableAudioSource( stream:TStream, flags:Int ) Override
 		Local sound:TSLLoadableAudioSource = New TSLOpenmpt
 		If sound.loadStream(stream) = SO_NO_ERROR Then
 			Return sound
