@@ -21,43 +21,60 @@
 '
 SuperStrict
 
-Module Audio.SoloudAudioSDL
+Rem
+bbdoc: MiniAudio Audio driver.
+End Rem
+Module Audio.AudioMiniAudio
 
-Import Audio.SoloudSDL
+Import Audio.SoloudMiniAudio
 Import Audio.SoloudAudio
 
-Type TSDLSoloudAudioDriver Extends TSoloudAudioDriver
-	Method Backend:Int() Override
-		Return SOLOUD_SDL2
+Type TMiniAudioSoloudAudioDriver Extends TSoloudAudioDriver
+	Method Backend:Int()
+		Return SOLOUD_MINIAUDIO
 	End Method
 End Type
 
 ?win32
+New TWASAPISoloudAudioDriver
 New TDirectSoundSoloudAudioDriver
 New TWinmMMSoloudAudioDriver
 New TDefaultSoloudAudioDriver
 
-Type TDirectSoundSoloudAudioDriver Extends TSDLSoloudAudioDriver
+Type TWASAPISoloudAudioDriver Extends TMiniAudioSoloudAudioDriver
 
-	Method Name$() Override
-		Return "SoLoud::DirectSound"
+	Method Name$()
+		Return "SoLoud::WASAPI"
 	End Method
 
-	Method Startup:Int() Override
-		SDLAudioInit("directsound")
+	Method Startup:Int()
+		MiniAudioInit(MA_BACKEND_WASAPI)
 		Return Super.Startup()
 	End Method
 	
 End Type
 
-Type TWinmMMSoloudAudioDriver Extends TSDLSoloudAudioDriver
+Type TDirectSoundSoloudAudioDriver Extends TMiniAudioSoloudAudioDriver
 
-	Method Name$() Override
+	Method Name$()
+		Return "SoLoud::DirectSound"
+	End Method
+
+	Method Startup:Int()
+		MiniAudioInit(MA_BACKEND_DSOUND)
+		Return Super.Startup()
+	End Method
+	
+End Type
+
+Type TWinmMMSoloudAudioDriver Extends TMiniAudioSoloudAudioDriver
+
+	Method Name$()
 		Return "SoLoud::WinMM"
 	End Method
 
-	Method Startup:Int() Override
-		SDLAudioInit("winmm")
+	Method Startup:Int()
+		MiniAudioInit(MA_BACKEND_WINMM)
 		Return Super.Startup()
 	End Method
 	
@@ -65,7 +82,7 @@ End Type
 
 Type TDefaultSoloudAudioDriver Extends TDirectSoundSoloudAudioDriver
 
-	Method Name$() Override
+	Method Name$()
 		Return "SoLoud"
 	End Method
 
@@ -73,57 +90,43 @@ End Type
 ?linux
 New TALSASoloudAudioDriver
 New TPulseAudioSoloudAudioDriver
-New TOSSSoloudAudioDriver
-New TNASSoloudAudioDriver
+New TJACKSoloudAudioDriver
 New TDefaultSoloudAudioDriver
 
-Type TALSASoloudAudioDriver Extends TSDLSoloudAudioDriver
+Type TALSASoloudAudioDriver Extends TMiniAudioSoloudAudioDriver
 
-	Method Name$() Override
+	Method Name$()
 		Return "SoLoud::ALSA"
 	End Method
 
-	Method Startup:Int() Override
-		SDLAudioInit("alsa")
+	Method Startup:Int()
+		MiniAudioInit(MA_BACKEND_ALSA)
 		Return Super.Startup()
 	End Method
 	
 End Type
 
-Type TPulseAudioSoloudAudioDriver Extends TSDLSoloudAudioDriver
+Type TPulseAudioSoloudAudioDriver Extends TMiniAudioSoloudAudioDriver
 
-	Method Name$() Override
+	Method Name$()
 		Return "SoLoud::PulseAudio"
 	End Method
 
-	Method Startup:Int() Override
-		SDLAudioInit("pulseaudio")
+	Method Startup:Int()
+		MiniAudioInit(MA_BACKEND_PULSEAUDIO)
 		Return Super.Startup()
 	End Method
 	
 End Type
 
-Type TOSSSoloudAudioDriver Extends TSDLSoloudAudioDriver
+Type TJACKSoloudAudioDriver Extends TMiniAudioSoloudAudioDriver
 
-	Method Name$() Override
-		Return "SoLoud::OSS"
+	Method Name$()
+		Return "SoLoud::JACK"
 	End Method
 
-	Method Startup:Int() Override
-		SDLAudioInit("dsp")
-		Return Super.Startup()
-	End Method
-	
-End Type
-
-Type TNASSoloudAudioDriver Extends TSDLSoloudAudioDriver
-
-	Method Name$() Override
-		Return "SoLoud::NAS"
-	End Method
-
-	Method Startup:Int() Override
-		SDLAudioInit("nas")
+	Method Startup:Int()
+		MiniAudioInit(MA_BACKEND_JACK)
 		Return Super.Startup()
 	End Method
 	
@@ -131,7 +134,7 @@ End Type
 
 Type TDefaultSoloudAudioDriver Extends TPulseAudioSoloudAudioDriver
 
-	Method Name$() Override
+	Method Name$()
 		Return "SoLoud"
 	End Method
 
@@ -140,14 +143,14 @@ End Type
 New TCoreAudioSoloudAudioDriver
 New TDefaultSoloudAudioDriver
 
-Type TCoreAudioSoloudAudioDriver Extends TSDLSoloudAudioDriver
+Type TCoreAudioSoloudAudioDriver Extends TMiniAudioSoloudAudioDriver
 
-	Method Name$() Override
+	Method Name$()
 		Return "SoLoud::CoreAudio"
 	End Method
 
-	Method Startup:Int() Override
-		SDLAudioInit("coreaudio")
+	Method Startup:Int()
+		MiniAudioInit(MA_BACKEND_COREAUDIO)
 		Return Super.Startup()
 	End Method
 	
@@ -155,7 +158,7 @@ End Type
 
 Type TDefaultSoloudAudioDriver Extends TCoreAudioSoloudAudioDriver
 
-	Method Name$() Override
+	Method Name$()
 		Return "SoLoud"
 	End Method
 

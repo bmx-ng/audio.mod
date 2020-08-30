@@ -21,9 +21,6 @@
 '
 SuperStrict
 
-Rem
-bbdoc: 
-End Rem
 Module Audio.SoloudMiniAudio
 
 ModuleInfo "Version: 1.00"
@@ -45,6 +42,7 @@ ModuleInfo "CC_OPTS: -msse3"
 ?
 ModuleInfo "CC_OPTS: -DWITH_SDL2_STATIC"
 ModuleInfo "CC_OPTS: -DWITH_MINIAUDIO"
+ModuleInfo "CC_OPTS: -DMA_NO_WAV"
 
 Import "common.bmx"
 

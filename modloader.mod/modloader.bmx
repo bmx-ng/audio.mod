@@ -24,7 +24,7 @@ SuperStrict
 Rem
 bbdoc: Mod music loader.
 End Rem
-Module Audio.modloader
+Module Audio.ModLoader
 
 Import Audio.SoloudAudio
 
