@@ -163,6 +163,30 @@ Type TDefaultSoloudAudioDriver Extends TCoreAudioSoloudAudioDriver
 	End Method
 
 End Type
+?haiku
+New THaikuSoloudAudioDriver
+New TDefaultSoloudAudioDriver
+
+Type THaikuSoloudAudioDriver Extends TSDLSoloudAudioDriver
+
+	Method Name$() Override
+		Return "SoLoud::Haiku"
+	End Method
+
+	Method Startup:Int() Override
+		SDLAudioInit("haiku")
+		Return Super.Startup()
+	End Method
+	
+End Type
+
+Type TDefaultSoloudAudioDriver Extends THaikuSoloudAudioDriver
+
+	Method Name$() Override
+		Return "SoLoud"
+	End Method
+
+End Type
 ?
 
 SetAudioDriver "SoLoud"
