@@ -48,7 +48,7 @@ Type TWASAPISoloudAudioDriver Extends TMiniAudioSoloudAudioDriver
 	End Method
 
 	Method Startup:Int()
-		MiniAudioInit(MA_BACKEND_WASAPI)
+		MiniAudioInit(EMaBackend.ma_backend_wasapi)
 		Return Super.Startup()
 	End Method
 	
@@ -61,7 +61,7 @@ Type TDirectSoundSoloudAudioDriver Extends TMiniAudioSoloudAudioDriver
 	End Method
 
 	Method Startup:Int()
-		MiniAudioInit(MA_BACKEND_DSOUND)
+		MiniAudioInit(EMaBackend.ma_backend_dsound)
 		Return Super.Startup()
 	End Method
 	
@@ -74,7 +74,7 @@ Type TWinmMMSoloudAudioDriver Extends TMiniAudioSoloudAudioDriver
 	End Method
 
 	Method Startup:Int()
-		MiniAudioInit(MA_BACKEND_WINMM)
+		MiniAudioInit(EMaBackend.ma_backend_winmm)
 		Return Super.Startup()
 	End Method
 	
@@ -100,7 +100,7 @@ Type TALSASoloudAudioDriver Extends TMiniAudioSoloudAudioDriver
 	End Method
 
 	Method Startup:Int()
-		MiniAudioInit(MA_BACKEND_ALSA)
+		MiniAudioInit(EMaBackend.ma_backend_alsa)
 		Return Super.Startup()
 	End Method
 	
@@ -113,7 +113,7 @@ Type TPulseAudioSoloudAudioDriver Extends TMiniAudioSoloudAudioDriver
 	End Method
 
 	Method Startup:Int()
-		MiniAudioInit(MA_BACKEND_PULSEAUDIO)
+		MiniAudioInit(EMaBackend.ma_backend_pulseaudio)
 		Return Super.Startup()
 	End Method
 	
@@ -126,7 +126,7 @@ Type TJACKSoloudAudioDriver Extends TMiniAudioSoloudAudioDriver
 	End Method
 
 	Method Startup:Int()
-		MiniAudioInit(MA_BACKEND_JACK)
+		MiniAudioInit(EMaBackend.ma_backend_jack)
 		Return Super.Startup()
 	End Method
 	
@@ -150,7 +150,7 @@ Type TCoreAudioSoloudAudioDriver Extends TMiniAudioSoloudAudioDriver
 	End Method
 
 	Method Startup:Int()
-		MiniAudioInit(MA_BACKEND_COREAUDIO)
+		MiniAudioInit(EMaBackend.ma_backend_coreaudio)
 		Return Super.Startup()
 	End Method
 	
