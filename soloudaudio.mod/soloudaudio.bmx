@@ -1,4 +1,4 @@
-' Copyright (c) 2016-2020 Bruce A Henderson
+' Copyright (c) 2016-2022 Bruce A Henderson
 '
 ' This software is provided 'as-is', without any express or implied
 ' warranty. In no event will the authors be held liable for any damages
@@ -29,7 +29,7 @@ Module Audio.soloudaudio
 
 ModuleInfo "Version: 1.02"
 ModuleInfo "License: zlib/libpng"
-ModuleInfo "Copyright: 2016-2020 Bruce A Henderson"
+ModuleInfo "Copyright: 2016-2022 Bruce A Henderson"
 
 ModuleInfo "History: 1.02"
 ModuleInfo "History: Fixed loader priority ordering."
