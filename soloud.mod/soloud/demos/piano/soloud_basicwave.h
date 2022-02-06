@@ -1,6 +1,6 @@
 /*
 SoLoud audio engine
-Copyright (c) 2013 Jari Komppa
+Copyright (c) 2013-2021 Jari Komppa
 
 This software is provided 'as-is', without any express or implied
 warranty. In no event will the authors be held liable for any damages
@@ -26,6 +26,7 @@ freely, subject to the following restrictions:
 #define BASICWAVE_H
 
 #include "soloud.h"
+#include "soloud_adsr.h"
 
 namespace SoLoud
 {
@@ -34,7 +35,9 @@ namespace SoLoud
 	class BasicwaveInstance : public AudioSourceInstance
 	{
 		Basicwave *mParent;
+		float mFreq;
 		int mOffset;
+		float mT;
 	public:
 		BasicwaveInstance(Basicwave *aParent);
 		virtual unsigned int getAudio(float *aBuffer, unsigned int aSamplesToRead, unsigned int aBufferSize);
@@ -44,20 +47,17 @@ namespace SoLoud
 	class Basicwave : public AudioSource
 	{
 	public:
-		enum WAVEFORMS
-		{
-			SINE,
-			TRIANGLE,
-			SQUARE,
-			SAW,
-			INVERSESAW
-		};
+		ADSR mADSR;
 		float mFreq;
+		float mSuperwaveScale;
+		float mSuperwaveDetune;
 		int mWaveform;
+		bool mSuperwave;
 		Basicwave();
 		virtual ~Basicwave();
 		void setSamplerate(float aSamplerate);
 		void setWaveform(int aWaveform);
+		void setFreq(float aFreq, bool aSupewave = false);
 		virtual AudioSourceInstance *createInstance();
 	};
 };

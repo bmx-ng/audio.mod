@@ -1,4 +1,4 @@
-' Copyright (c) 2016-2020 Bruce A Henderson
+' Copyright (c) 2016-2022 Bruce A Henderson
 '
 ' This software is provided 'as-is', without any express or implied
 ' warranty. In no event will the authors be held liable for any damages
@@ -26,11 +26,13 @@ bbdoc: SoLoud audio.
 End Rem
 Module Audio.SoLoud
 
-ModuleInfo "Version: 1.02"
+ModuleInfo "Version: 1.03"
 ModuleInfo "License: zlib/libpng"
-ModuleInfo "Copyright: SoLoud - 2013-2020 Jari Komppa"
-ModuleInfo "Copyright: Wrapper - 2016-2020 Bruce A Henderson"
+ModuleInfo "Copyright: SoLoud - 2013-2021 Jari Komppa"
+ModuleInfo "Copyright: Wrapper - 2016-2022 Bruce A Henderson"
 
+ModuleInfo "History: 1.03"
+ModuleInfo "History: Update to latest SoLoud.1157475"
 ModuleInfo "History: 1.02"
 ModuleInfo "History: Update to latest SoLoud."
 ModuleInfo "History: Added TSLAy audio source."
@@ -54,6 +56,14 @@ ModuleInfo "CC_OPTS: -DWITH_MINIAUDIO"
 
 Import "file.bmx"
 Import "common.bmx"
+
+'
+' Implementation notes :
+'     Ay*() functions added to sound_c.cpp
+'     Openmpt*() functions moved to openmptloader.cpp in modloader.mod allowing us to optionally use openmpt.
+'
+'     soloud_miniaudio.cpp : Added use of our own ma_context instance, instead of NULL
+'
 
 Rem
 bbdoc: An instance of the Soloud player.

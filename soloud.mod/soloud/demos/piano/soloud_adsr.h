@@ -1,6 +1,6 @@
 /*
-Openmpt module for SoLoud audio engine
-Copyright (c) 2016 Jari Komppa
+SoLoud audio engine
+Copyright (c) 2013-2021 Jari Komppa
 
 This software is provided 'as-is', without any express or implied
 warranty. In no event will the authors be held liable for any damages
@@ -22,40 +22,55 @@ freely, subject to the following restrictions:
    distribution.
 */
 
-#ifndef OPENMPT_H
-#define OPENMPT_H
+#ifndef ADSR_H
+#define ADSR_H
 
 #include "soloud.h"
 
 namespace SoLoud
 {
-	class Openmpt;
-	class File;
-
-	class OpenmptInstance : public AudioSourceInstance
-	{
-		Openmpt *mParent;
-		void *mModfile;
-		int mPlaying;
-
-	public:
-		OpenmptInstance(Openmpt *aParent);
-		virtual ~OpenmptInstance();
-		virtual unsigned int getAudio(float *aBuffer, unsigned int aSamplesToRead, unsigned int aBufferSize);
-		virtual bool hasEnded();
-	};
-
-	class Openmpt : public AudioSource
+	class ADSR
 	{
 	public:
-		char *mData;
-		unsigned int mDataLen;
-		Openmpt();
-		virtual ~Openmpt();
-		result load(const char* aFilename);
-		result loadMem(const unsigned char *aMem, unsigned int aLength, bool aCopy = false, bool aTakeOwnership = true);
-		result loadFile(File *aFile);
-		virtual AudioSourceInstance *createInstance();
+		float mA, mD, mS, mR;
+
+		ADSR()
+		{
+			mA = 0.0f;
+			mD = 0.0f;
+			mS = 1.0f;
+			mR = 0.0f;
+		}
+
+		ADSR(float aA, float aD, float aS, float aR)
+		{
+			mA = aA;
+			mD = aD;
+			mS = aS;
+			mR = aR;
+		}
+		
+		float val(float aT, float aRelTime)
+		{
+			if (aT < mA)
+			{
+				return aT / mA;
+			}
+			aT -= mA;
+			if (aT < mD)
+			{
+				return 1.0f - ((aT / mD)) * (1.0f - mS);
+			}
+			aT -= mD;
+			if (aT < aRelTime)
+				return mS;
+			aT -= aRelTime;
+			if (aT >= mR)
+			{
+				return 0.0f;
+			}
+			return (1.0f - aT / mR) * mS;
+		}
 	};
 };
 

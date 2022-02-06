@@ -4,3 +4,5 @@
 *.i
 *.i2
 commands.html
+
+.DS_Store

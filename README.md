@@ -126,7 +126,7 @@ SuperStrict
 
 Framework audio.AudioMiniAudio
 
-Local sound:TSound = LoadSound("music.ogg" | SOUND_STREAM)
+Local sound:TSound = LoadSound("music.ogg", SOUND_STREAM)
 Local channel:TChannel = PlaySound(sound)
 
 Repeat
