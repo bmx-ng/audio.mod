@@ -10,6 +10,7 @@ extern "C" {
 	int audio_soloud_file_TStreamFile__length(BBObject * handle);
 	int audio_soloud_file_TStreamFile__pos(BBObject * handle);
 	int audio_soloud_file_TStreamFile__read(BBObject * handle, unsigned char * dst, int size);
+	int audio_soloud_file_TStreamFile__destroy(BBObject * handle);
 
 	SoLoud::File * bmx_soloud_streamfile_new(BBObject * handle);
 	void bmx_soloud_streamfile_free(SoLoud::File * file);
@@ -27,6 +28,7 @@ public:
 	 }
 	
 	virtual ~TStreamFile() {
+		audio_soloud_file_TStreamFile__destroy(maxHandle);
 		BBRELEASE(maxHandle);
 	}
 	

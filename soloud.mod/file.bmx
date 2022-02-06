@@ -23,13 +23,13 @@ SuperStrict
 
 Import "common.bmx"
 
-
 Type TStreamFile
 
 	Field filePtr:Byte Ptr
 	Field stream:TStream
+	Field shouldCloseStream:Int
 	
-	Method Create:TStreamFile(stream:TStream)
+	Method Create:TStreamFile(stream:TStream, shouldCloseStream:Int = True)
 		filePtr = bmx_soloud_streamfile_new(Self)
 		Self.stream = stream
 		stream.Seek(0)
@@ -54,6 +54,13 @@ Type TStreamFile
 	
 	Function _read:Int(sf:TStreamFile, dst:Byte Ptr, size:Int) { nomangle }
 		Return sf.stream.Read(dst, size)
+	End Function
+
+	Function _destroy(sf:TStreamFile) { nomangle }
+		If sf.shouldCloseStream And sf.stream Then
+			sf.stream.Close()
+			sf.stream = Null
+		End if
 	End Function
 
 	Method Free()

@@ -575,6 +575,8 @@ End Type
 
 Type TSLLoadableAudioSource Extends TSLAudioSource
 
+	Field sf:TStreamFile
+
 	Method Load:Int(filename:String) Abstract
 	Method loadMem:Int(mem:Byte Ptr, length:Int, copy:Int = False, takeOwnership:Int = True) Abstract
 	Method loadStream:Int(stream:TStream) Abstract
@@ -758,9 +760,11 @@ Type TSLWav Extends TSLLoadableAudioSource
 	bbdoc: 
 	End Rem
 	Method loadStream:Int(stream:TStream) Override
-		Local sf:TStreamFile = New TStreamFile.Create(stream)
+		If sf Then
+			sf.Free()
+		End If
+		sf = New TStreamFile.Create(stream)
 		Local res:Int = Wav_loadFile(asPtr, sf.filePtr)
-		'sf.Free()
 		Return res
 	End Method
 
@@ -868,6 +872,10 @@ Type TSLWav Extends TSLLoadableAudioSource
 
 	Method destroy() Override
 		If asPtr Then
+			If sf Then
+				sf.Free()
+				sf = Null
+			End If
 			Wav_destroy(asPtr)
 			asPtr = Null
 		End If
@@ -920,7 +928,10 @@ Type TSLWavStream Extends TSLLoadableAudioSource
 	bbdoc: 
 	End Rem
 	Method loadStream:Int(stream:TStream) Override
-		Local sf:TStreamFile = New TStreamFile.Create(stream)
+		If sf Then
+			sf.Free()
+		End If
+		sf = New TStreamFile.Create(stream)
 		Return WavStream_loadFile(asPtr, sf.filePtr)
 	End Method
 
@@ -1028,6 +1039,10 @@ Type TSLWavStream Extends TSLLoadableAudioSource
 
 	Method destroy() Override
 		If asPtr Then
+			If sf Then
+				sf.Free()
+				sf = Null
+			End If
 			WavStream_destroy(asPtr)
 			asPtr = Null
 		End If
@@ -1069,9 +1084,8 @@ Type TSLSfxr Extends TSLLoadableAudioSource
 	bbdoc: 
 	End Rem
 	Method loadStream:Int(stream:TStream) Override
-		Local sf:TStreamFile = New TStreamFile.Create(stream)
+		sf = New TStreamFile.Create(stream)
 		Local res:Int = Sfxr_loadParamsFile(asPtr, sf.filePtr)
-		sf.Free()
 		Return res
 	End Method
 
@@ -1179,6 +1193,10 @@ Type TSLSfxr Extends TSLLoadableAudioSource
 
 	Method destroy() Override
 		If asPtr Then
+			If sf Then
+				sf.Free()
+				sf = Null
+			End If
 			Sfxr_destroy(asPtr)
 			asPtr = Null
 		End If
@@ -1221,8 +1239,9 @@ Type TSLMonotone Extends TSLLoadableAudioSource
 	bbdoc: 
 	End Rem
 	Method loadStream:Int(stream:TStream) Override
-		Local sf:TStreamFile = New TStreamFile.Create(stream)
-		Return Monotone_LoadFile(asPtr, sf.filePtr)
+		sf = New TStreamFile.Create(stream)
+		Local res:Int = Monotone_LoadFile(asPtr, sf.filePtr)
+		Return res
 	End Method
 
 	Rem
@@ -1329,6 +1348,10 @@ Type TSLMonotone Extends TSLLoadableAudioSource
 
 	Method destroy() Override
 		If asPtr Then
+			If sf Then
+				sf.Free()
+				sf = Null
+			End If
 			Monotone_destroy(asPtr)
 			asPtr = Null
 		End If
@@ -1370,8 +1393,9 @@ Type TSLTedSid Extends TSLLoadableAudioSource
 	bbdoc: 
 	End Rem
 	Method loadStream:Int(stream:TStream) Override
-		Local sf:TStreamFile = New TStreamFile.Create(stream)
-		Return TedSid_LoadFile(asPtr, sf.filePtr)
+		sf = New TStreamFile.Create(stream)
+		Local res:Int = TedSid_LoadFile(asPtr, sf.filePtr)
+		Return res
 	End Method
 
 	Rem
@@ -1478,6 +1502,10 @@ Type TSLTedSid Extends TSLLoadableAudioSource
 
 	Method destroy() Override
 		If asPtr Then
+			If sf Then
+				sf.Free()
+				sf = Null
+			End If
 			TedSid_destroy(asPtr)
 			asPtr = Null
 		End If
@@ -1521,8 +1549,9 @@ Type TSLAy Extends TSLLoadableAudioSource
 	bbdoc: 
 	End Rem
 	Method loadStream:Int(stream:TStream) Override
-		Local sf:TStreamFile = New TStreamFile.Create(stream)
-		Return Ay_LoadFile(asPtr, sf.filePtr)
+		sf = New TStreamFile.Create(stream)
+		Local res:Int = Ay_LoadFile(asPtr, sf.filePtr)
+		Return res
 	End Method
 
 	Rem
@@ -1629,6 +1658,10 @@ Type TSLAy Extends TSLLoadableAudioSource
 
 	Method destroy() Override
 		If asPtr Then
+			If sf Then
+				sf.Free()
+				sf = Null
+			End If
 			Ay_destroy(asPtr)
 			asPtr = Null
 		End If
