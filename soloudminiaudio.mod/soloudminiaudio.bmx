@@ -46,11 +46,11 @@ ModuleInfo "CC_OPTS: -DMA_NO_WAV"
 
 Import "common.bmx"
 
-Function MiniAudioInit(backend:Int)
+Function MiniAudioInit(backend:EMaBackend)
 	bmx_soloud_miniaudio_context_init(backend)
 End Function
 
 Private
 Extern
-	Function bmx_soloud_miniaudio_context_init(backend:Int)
+	Function bmx_soloud_miniaudio_context_init(backend:EMaBackend)
 End Extern

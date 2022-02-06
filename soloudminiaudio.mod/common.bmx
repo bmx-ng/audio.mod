@@ -40,17 +40,20 @@ End Function
 
 Public
 
-Const MA_BACKEND_WASAPI:Int = 0
-Const MA_BACKEND_DSOUND:Int = 1
-Const MA_BACKEND_WINMM:Int = 2
-Const MA_BACKEND_COREAUDIO:Int = 4
-Const MA_BACKEND_SNDIO:Int = 5
-Const MA_BACKEND_AUDIO4:Int = 6
-Const MA_BACKEND_OSS:Int = 7
-Const MA_BACKEND_PULSEAUDIO:Int = 8
-Const MA_BACKEND_ALSA:Int = 9
-Const MA_BACKEND_JACK:Int = 10
-Const MA_BACKEND_AAUDIO:Int = 11
-Const MA_BACKEND_OPENSL:Int = 12
-Const MA_BACKEND_WEBAUDIO:Int = 13
-Const MA_BACKEND_NULL:Int = 14
+Enum EMaBackend
+	ma_backend_wasapi
+    ma_backend_dsound
+    ma_backend_winmm
+    ma_backend_coreaudio
+    ma_backend_sndio
+    ma_backend_audio4
+    ma_backend_oss
+    ma_backend_pulseaudio
+    ma_backend_alsa
+    ma_backend_jack
+    ma_backend_aaudio
+    ma_backend_opensl
+    ma_backend_webaudio
+    ma_backend_custom '  <-- Custom backend, with callbacks defined by the context config.
+    ma_backend_null    ' <-- Must always be the last item. Lowest priority, and used as the terminator for backend enumeration. 
+End Enum
