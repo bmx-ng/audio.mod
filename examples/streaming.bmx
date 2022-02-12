@@ -23,14 +23,29 @@ Local so:TSoLoud = driver._soloud
 so.setVisualizationEnable(True)
 
 Global channel:TChannel = PlaySound(sound)
+Local volume:Float = 1
 
 While not keydown(KEY_ESCAPE)
 	Cls
 
 	If KeyHit(KEY_SPACE) Then
 		NextTrack()
+		channel.SetVolume(volume)
 	End If
 
+	If KeyDown(Key_UP) Then
+		volume :+ 0.02
+		volume = Min(volume, 1)
+
+		channel.SetVolume(volume)
+	End If
+
+	If KeyDown(Key_Down) Then
+		volume :- 0.02
+		volume = Max(volume, 0)
+
+		channel.SetVolume(volume)
+	End If
 
 	Local StaticArray wavData:Float[256]
 	Local StaticArray fftData:Float[256]
@@ -82,6 +97,14 @@ While not keydown(KEY_ESCAPE)
 	SetColor(255, 255, 255)
 	DrawText(TimeToTime(pos), 20, y + 25)
 	DrawText(TimeToTime(length - pos), 747, y + 25)
+
+	DrawRect(20, 400, 20, 80)
+	SetColor(0,0,0)
+	DrawRect(21, 401, 18, 78)
+	length = 78 * volume
+
+	SetColor(4, 136, 4)
+	DrawRect(21, 401 + 78 - length, 18, length)
 
 	Flip
 
