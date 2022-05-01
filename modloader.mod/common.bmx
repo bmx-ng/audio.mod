@@ -28,8 +28,7 @@ Import "../soloud.mod/soloud/include/*.h"
 
 ' audiosource - openmpt
 Import "../soloud.mod/soloud/src/audiosource/openmpt/soloud_openmpt.cpp"
-
-Import "openmptloader.cpp"
+Import "../soloud.mod/soloud/src/c_api/soloud_c_openmpt.cpp"
 
 Extern
 	' Openmpt
@@ -53,4 +52,5 @@ Extern
 	Function Openmpt_setInaudibleBehavior(aOpenmpt:Byte Ptr, aMustTick:Int, aKill:Int)
 	Function Openmpt_setFilter(aOpenmpt:Byte Ptr, aFilterId:Int, aFilter:Byte Ptr)
 	Function Openmpt_stop(aOpenmpt:Byte Ptr)
+	Function Openmpt_getLength:Double(aOpenmpt:Byte Ptr) 
 End Extern

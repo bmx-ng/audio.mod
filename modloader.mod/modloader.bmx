@@ -169,6 +169,13 @@ Type TSLOpenmpt Extends TSLLoadableAudioSource
 		Openmpt_stop(asPtr)
 	End Method
 
+	Rem
+	bbdoc: Returns the length of the audio source, in seconds.
+	End Rem
+	Method getLength:Double() Override
+		Return Openmpt_getLength(asPtr)
+	End Method
+
 	Method destroy() Override
 		If asPtr Then
 			Openmpt_destroy(asPtr)
