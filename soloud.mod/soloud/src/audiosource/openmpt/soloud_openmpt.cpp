@@ -33,6 +33,7 @@ extern "C"
 	void openmpt_module_destroy(void * mod);
 	int openmpt_module_read_float_stereo(void * mod, int samplerate, size_t count, float * left, float * right);
 	void openmpt_module_set_repeat_count(void* mod, int repeat_count);
+	double openmpt_module_get_duration_seconds(void* mod);
 }
 
 namespace SoLoud
@@ -123,6 +124,7 @@ namespace SoLoud
 			mDataLen = 0;
 			return FILE_LOAD_FAILED;
 		}
+		mLength = openmpt_module_get_duration_seconds(mpf);
 		openmpt_module_destroy(mpf);
 		return 0;
 	}
@@ -133,6 +135,7 @@ namespace SoLoud
 		mChannels = 2;
 		mData = 0;
 		mDataLen = 0;
+		mLength = 0;
 	}
 
 	Openmpt::~Openmpt()
@@ -149,6 +152,11 @@ namespace SoLoud
 	AudioSourceInstance * Openmpt::createInstance()
 	{
 		return new OpenmptInstance(this);
+	}
+
+	double Openmpt::getLength()
+	{
+		return mLength;
 	}
 
 };

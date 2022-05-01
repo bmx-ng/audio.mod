@@ -26,11 +26,13 @@ bbdoc: SoLoud audio.
 End Rem
 Module Audio.SoLoud
 
-ModuleInfo "Version: 1.03"
+ModuleInfo "Version: 1.04"
 ModuleInfo "License: zlib/libpng"
-ModuleInfo "Copyright: SoLoud - 2013-2021 Jari Komppa"
+ModuleInfo "Copyright: SoLoud - 2013-2022 Jari Komppa"
 ModuleInfo "Copyright: Wrapper - 2016-2022 Bruce A Henderson"
 
+ModuleInfo "History: 1.04"
+ModuleInfo "History: Update to woollybah/soloud.571fde0"
 ModuleInfo "History: 1.03"
 ModuleInfo "History: Update to latest SoLoud.1157475"
 ModuleInfo "History: 1.02"
@@ -59,10 +61,7 @@ Import "common.bmx"
 
 '
 ' Implementation notes :
-'     Ay*() functions added to sound_c.cpp
-'     Openmpt*() functions moved to openmptloader.cpp in modloader.mod allowing us to optionally use openmpt.
-'
-'     soloud_miniaudio.cpp : Added use of our own ma_context instance, instead of NULL
+'     Now using the woollybah fork of soloud : https://github.com/woollybah/soloud
 '
 
 Rem

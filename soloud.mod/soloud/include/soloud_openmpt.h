@@ -50,12 +50,14 @@ namespace SoLoud
 	public:
 		char *mData;
 		unsigned int mDataLen;
+		time mLength;
 		Openmpt();
 		virtual ~Openmpt();
 		result load(const char* aFilename);
 		result loadMem(const unsigned char *aMem, unsigned int aLength, bool aCopy = false, bool aTakeOwnership = true);
 		result loadFile(File *aFile);
 		virtual AudioSourceInstance *createInstance();
+		time getLength();
 	};
 };
 

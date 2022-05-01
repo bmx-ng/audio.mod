@@ -1,3 +1,8 @@
+/* **************************************************
+ *  WARNING: this is a generated file. Do not edit. *
+ *  Any edits will be overwritten by the generator. *
+ ************************************************** */
+
 /*
 SoLoud audio engine
 Copyright (c) 2013-2020 Jari Komppa
@@ -24,9 +29,8 @@ freely, subject to the following restrictions:
 
 /* SoLoud C-Api Code Generator (c)2013-2020 Jari Komppa http://iki.fi/sol/ */
 
-#include "../soloud.mod/soloud/src/../include/soloud.h"
-#include "../soloud.mod/soloud/src/../include/soloud_audiosource.h"
-#include "../soloud.mod/soloud/src/../include/soloud_openmpt.h"
+#include "../include/soloud.h"
+#include "../include/soloud_openmpt.h"
 
 using namespace SoLoud;
 
@@ -162,6 +166,13 @@ void Openmpt_stop(void * aClassPtr)
 	Openmpt * cl = (Openmpt *)aClassPtr;
 	cl->stop();
 }
+
+double Openmpt_getLength(void * aClassPtr)
+{
+	Openmpt * cl = (Openmpt *)aClassPtr;
+	return cl->getLength();
+}
+
 
 } // extern "C"
 

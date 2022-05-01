@@ -59,6 +59,13 @@ Import "soloud/src/filter/soloud_robotizefilter.cpp"
 Import "soloud/src/filter/soloud_waveshaperfilter.cpp"
 
 ' c api
+Import "soloud/src/c_api/soloud_c_ay.cpp"
+Import "soloud/src/c_api/soloud_c_bus.cpp"
+Import "soloud/src/c_api/soloud_c_monotone.cpp"
+Import "soloud/src/c_api/soloud_c_noise.cpp"
+Import "soloud/src/c_api/soloud_c_queue.cpp"
+Import "soloud/src/c_api/soloud_c_vizsn.cpp"
+Import "soloud/src/c_api/soloud_c_wav.cpp"
 Import "soloud/src/c_api/soloud_c.cpp"
 
 ' backend - alsa

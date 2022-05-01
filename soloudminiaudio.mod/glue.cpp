@@ -12,24 +12,25 @@ namespace SoLoud {
 
 }
 
-ma_context * _bmx_ma_context = 0;
+extern ma_context * _so_ma_context;
 
 extern "C" {
 
 void bmx_soloud_miniaudio_context_deinit() {
-	ma_context_uninit(_bmx_ma_context);
+	ma_context_uninit(_so_ma_context);
+	_so_ma_context = 0;
 }
 
 void bmx_soloud_miniaudio_context_init(ma_backend backend) {
-	if (_bmx_ma_context) {
+	if (_so_ma_context) {
 		bmx_soloud_miniaudio_context_deinit();
 	} else {
-		_bmx_ma_context = (ma_context*)malloc(sizeof(ma_context));
+		_so_ma_context = (ma_context*)malloc(sizeof(ma_context));
 	}
 	
 	ma_backend backends[] = { backend };
 	
-	ma_context_init(backends, 1, NULL, _bmx_ma_context);
+	ma_context_init(backends, 1, NULL, _so_ma_context);
 }
 
 
