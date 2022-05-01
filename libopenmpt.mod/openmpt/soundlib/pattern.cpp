@@ -16,6 +16,8 @@
 #include "ITTools.h"
 #include "Sndfile.h"
 #include "mod_specifications.h"
+#include "mpt/io/io.hpp"
+#include "mpt/io/io_stdstream.hpp"
 
 
 OPENMPT_NAMESPACE_BEGIN
@@ -91,9 +93,9 @@ bool CPattern::Resize(const ROWINDEX newRowCount, bool enforceFormatLimits, bool
 			m_ModCommands.erase(m_ModCommands.end() - count, m_ModCommands.end());
 		else
 			m_ModCommands.erase(m_ModCommands.begin(), m_ModCommands.begin() + count);
-	} MPT_EXCEPTION_CATCH_OUT_OF_MEMORY(e)
+	} catch(mpt::out_of_memory e)
 	{
-		MPT_EXCEPTION_DELETE_OUT_OF_MEMORY(e);
+		mpt::delete_out_of_memory(e);
 		return false;
 	}
 
@@ -180,9 +182,9 @@ bool CPattern::Expand()
 	try
 	{
 		newPattern.assign(m_ModCommands.size() * 2, ModCommand::Empty());
-	} MPT_EXCEPTION_CATCH_OUT_OF_MEMORY(e)
+	} catch(mpt::out_of_memory e)
 	{
-		MPT_EXCEPTION_DELETE_OUT_OF_MEMORY(e);
+		mpt::delete_out_of_memory(e);
 		return false;
 	}
 
@@ -240,7 +242,7 @@ bool CPattern::Shrink()
 			}
 		}
 	}
-	m_ModCommands.resize(m_ModCommands.size() / 2);
+	m_ModCommands.resize(m_Rows * nChns);
 
 	return true;
 }
@@ -262,7 +264,8 @@ bool CPattern::SetName(const char *newName, size_t maxChars)
 	{
 		return false;
 	}
-	m_PatternName = mpt::truncate(newName, maxChars);
+	const auto nameEnd = std::find(newName, newName + maxChars, '\0');
+	m_PatternName.assign(newName, nameEnd);
 	return true;
 }
 
@@ -500,13 +503,14 @@ void ReadModPattern(std::istream& iStrm, CPattern& pat, const size_t)
 		return;
 	ssb.ReadItem(pat, "data", &ReadData);
 	// pattern time signature
-	uint32 nRPB = 0, nRPM = 0;
-	ssb.ReadItem<uint32>(nRPB, "RPB.");
-	ssb.ReadItem<uint32>(nRPM, "RPM.");
-	pat.SetSignature(nRPB, nRPM);
+	uint32 rpb = 0, rpm = 0;
+	ssb.ReadItem<uint32>(rpb, "RPB.");
+	ssb.ReadItem<uint32>(rpm, "RPM.");
+	pat.SetSignature(rpb, rpm);
 	TempoSwing swing;
 	ssb.ReadItem<TempoSwing>(swing, "SWNG", TempoSwing::Deserialize);
-	if(!swing.empty()) swing.resize(nRPB);
+	if(!swing.empty())
+		swing.resize(pat.GetRowsPerBeat());
 	pat.SetTempoSwing(swing);
 }
 

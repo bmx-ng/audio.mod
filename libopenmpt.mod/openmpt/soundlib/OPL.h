@@ -9,7 +9,7 @@
 
 #pragma once
 
-#include "BuildSettings.h"
+#include "openmpt/all/BuildSettings.hpp"
 
 #include "Snd_defs.h"
 
@@ -67,21 +67,32 @@ public:
 		STEREO_BITS      = VOICE_TO_LEFT | VOICE_TO_RIGHT,
 	};
 
+	class IRegisterLogger
+	{
+	public:
+		virtual void Port(CHANNELINDEX c, uint16 reg, uint8 value) = 0;
+		virtual ~IRegisterLogger() {}
+	};
+
 	OPL(uint32 samplerate);
+	OPL(IRegisterLogger &logger);
 	~OPL();
 
 	void Initialize(uint32 samplerate);
 	void Mix(int32 *buffer, size_t count, uint32 volumeFactorQ16);
 
 	void NoteOff(CHANNELINDEX c);
-	void NoteCut(CHANNELINDEX c);
+	void NoteCut(CHANNELINDEX c, bool unassign = true);
 	void Frequency(CHANNELINDEX c, uint32 milliHertz, bool keyOff, bool beatingOscillators);
 	void Volume(CHANNELINDEX c, uint8 vol, bool applyToModulator);
 	int8 Pan(CHANNELINDEX c, int32 pan);
 	void Patch(CHANNELINDEX c, const OPLPatch &patch);
-	void Reset();
 	bool IsActive(CHANNELINDEX c) const { return GetVoice(c) != OPL_CHANNEL_INVALID; }
 	void MoveChannel(CHANNELINDEX from, CHANNELINDEX to);
+	void Reset();
+
+	// A list of all registers for channels and operators
+	static std::vector<uint16> AllVoiceRegisters();
 
 protected:
 	static uint16 ChannelToRegister(uint8 oplCh);
@@ -89,15 +100,19 @@ protected:
 	static uint8 CalcVolume(uint8 trackerVol, uint8 kslVolume);
 	uint8 GetVoice(CHANNELINDEX c) const;
 	uint8 AllocateVoice(CHANNELINDEX c);
+	void Port(CHANNELINDEX c, uint16 reg, uint8 value);
 
 	enum
 	{
-		OPL_CHANNELS = 18,	// 9 for OPL2 or 18 for OPL3
+		OPL_CHANNELS = 18,       // 9 for OPL2 or 18 for OPL3
+		OPL_CHANNEL_CUT = 0x80,  // Indicates that the channel has been cut and used as a hint to re-use the channel for the same tracker channel if possible
+		OPL_CHANNEL_MASK = 0x7F,
 		OPL_CHANNEL_INVALID = 0xFF,
 		OPL_BASERATE = 49716,
 	};
 
 	std::unique_ptr<Opal> m_opl;
+	IRegisterLogger *m_logger = nullptr;
 
 	std::array<uint8, OPL_CHANNELS> m_KeyOnBlock;
 	std::array<CHANNELINDEX, OPL_CHANNELS> m_OPLtoChan;

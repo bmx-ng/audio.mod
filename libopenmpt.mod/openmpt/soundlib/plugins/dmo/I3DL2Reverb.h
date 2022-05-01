@@ -10,7 +10,7 @@
 
 #pragma once
 
-#include "BuildSettings.h"
+#include "openmpt/all/BuildSettings.hpp"
 
 #ifndef NO_PLUGINS
 
@@ -21,7 +21,7 @@ OPENMPT_NAMESPACE_BEGIN
 namespace DMO
 {
 
-class I3DL2Reverb : public IMixPlugin
+class I3DL2Reverb final : public IMixPlugin
 {
 protected:
 	enum Parameters
@@ -63,7 +63,7 @@ protected:
 		float Get() const;
 	};
 
-	float m_param[kI3DL2ReverbNumParameters];
+	std::array<float, kI3DL2ReverbNumParameters> m_param;
 	int32 m_program = 0;
 
 	// Calculated parameters
@@ -106,6 +106,7 @@ public:
 
 	int32 GetNumPrograms() const override;
 	int32 GetCurrentProgram() override { return m_program; }
+	// cppcheck-suppress virtualCallInConstructor
 	void SetCurrentProgram(int32) override;
 
 	PlugParamIndex GetNumParameters() const override { return kI3DL2ReverbNumParameters; }

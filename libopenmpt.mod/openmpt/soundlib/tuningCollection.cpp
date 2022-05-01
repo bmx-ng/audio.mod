@@ -10,7 +10,8 @@
 
 #include "stdafx.h"
 #include "tuningcollection.h"
-#include "../common/mptIO.h"
+#include "mpt/io/io.hpp"
+#include "mpt/io/io_stdstream.hpp"
 #include "../common/serialization_utils.h"
 #include <algorithm>
 #include "../common/mptFileIO.h"
@@ -34,21 +35,19 @@ Version history:
 */
 
 
-const char CTuningCollection::s_FileExtension[4] = ".tc";
-
-
 namespace CTuningS11n
 {
-	void ReadStr(std::istream& iStrm, std::string& str, const size_t);
-	void WriteStr(std::ostream& oStrm, const std::string& str);
+	void ReadStr(std::istream &iStrm, mpt::ustring &ustr, const std::size_t dummy, mpt::Charset charset);
+	void WriteStr(std::ostream &oStrm, const mpt::ustring &ustr);
 } // namespace CTuningS11n
 
 using namespace CTuningS11n;
 
 
-static void ReadTuning(std::istream& iStrm, CTuningCollection& Tc, const size_t)
+static void ReadTuning(std::istream &iStrm, CTuningCollection &Tc, const std::size_t dummy, mpt::Charset defaultCharset)
 {
-	Tc.AddTuning(iStrm);
+	MPT_UNREFERENCED_PARAMETER(dummy);
+	Tc.AddTuning(iStrm, defaultCharset);
 }
 
 static void WriteTuning(std::ostream& oStrm, const CTuning& t)
@@ -57,7 +56,7 @@ static void WriteTuning(std::ostream& oStrm, const CTuning& t)
 }
 
 
-CTuning* CTuningCollection::GetTuning(const std::string& name)
+CTuning* CTuningCollection::GetTuning(const mpt::ustring &name)
 {
 	for(std::size_t i = 0; i<m_Tunings.size(); i++)
 	{
@@ -69,7 +68,7 @@ CTuning* CTuningCollection::GetTuning(const std::string& name)
 	return nullptr;
 }
 
-const CTuning* CTuningCollection::GetTuning(const std::string& name) const
+const CTuning* CTuningCollection::GetTuning(const mpt::ustring &name) const
 {
 	for(std::size_t i = 0; i<m_Tunings.size(); i++)
 	{
@@ -82,10 +81,11 @@ const CTuning* CTuningCollection::GetTuning(const std::string& name) const
 }
 
 
-Tuning::SerializationResult CTuningCollection::Serialize(std::ostream& oStrm, const std::string &name) const
+Tuning::SerializationResult CTuningCollection::Serialize(std::ostream& oStrm, const mpt::ustring &name) const
 {
 	srlztn::SsbWrite ssb(oStrm);
 	ssb.BeginWrite("TC", 3); // version
+	ssb.WriteItem(int8(1), "UTF8");
 	ssb.WriteItem(name, "0", &WriteStr);
 	uint16 dummyEditMask = 0xffff;
 	ssb.WriteItem(dummyEditMask, "1");
@@ -102,11 +102,11 @@ Tuning::SerializationResult CTuningCollection::Serialize(std::ostream& oStrm, co
 }
 
 
-Tuning::SerializationResult CTuningCollection::Deserialize(std::istream& iStrm, std::string &name)
+Tuning::SerializationResult CTuningCollection::Deserialize(std::istream &iStrm, mpt::ustring &name, mpt::Charset defaultCharset)
 {
 	std::istream::pos_type startpos = iStrm.tellg();
 	
-	const Tuning::SerializationResult oldLoadingResult = DeserializeOLD(iStrm, name);
+	const Tuning::SerializationResult oldLoadingResult = DeserializeOLD(iStrm, name, defaultCharset);
 
 	if(oldLoadingResult == Tuning::SerializationResult::NoMagic)
 	{	// An old version was not recognised - trying new version.
@@ -114,6 +114,9 @@ Tuning::SerializationResult CTuningCollection::Deserialize(std::istream& iStrm, 
 		iStrm.seekg(startpos);
 		srlztn::SsbRead ssb(iStrm);
 		ssb.BeginRead("TC", 3); // version
+		int8 use_utf8 = 0;
+		ssb.ReadItem(use_utf8, "UTF8");
+		const mpt::Charset charset = use_utf8 ? mpt::Charset::UTF8 : defaultCharset;
 
 		const srlztn::SsbRead::ReadIterator iterBeg = ssb.GetReadBegin();
 		const srlztn::SsbRead::ReadIterator iterEnd = ssb.GetReadEnd();
@@ -121,11 +124,11 @@ Tuning::SerializationResult CTuningCollection::Deserialize(std::istream& iStrm, 
 		{
 			uint16 dummyEditMask = 0xffff;
 			if (ssb.CompareId(iter, "0") == srlztn::SsbRead::IdMatch)
-				ssb.ReadIterItem(iter, name, &ReadStr);
+				ssb.ReadIterItem(iter, name, [charset](std::istream &iStrm, mpt::ustring &ustr, const std::size_t dummy){ return ReadStr(iStrm, ustr, dummy, charset); });
 			else if (ssb.CompareId(iter, "1") == srlztn::SsbRead::IdMatch)
 				ssb.ReadIterItem(iter, dummyEditMask);
 			else if (ssb.CompareId(iter, "2") == srlztn::SsbRead::IdMatch)
-				ssb.ReadIterItem(iter, *this, &ReadTuning);
+				ssb.ReadIterItem(iter, *this, [charset](std::istream &iStrm, CTuningCollection &Tc, const std::size_t dummy){ return ReadTuning(iStrm, Tc, dummy, charset); });
 		}
 
 		if(ssb.GetStatus() & srlztn::SNT_FAILURE)
@@ -140,7 +143,7 @@ Tuning::SerializationResult CTuningCollection::Deserialize(std::istream& iStrm, 
 }
 
 
-Tuning::SerializationResult CTuningCollection::DeserializeOLD(std::istream& inStrm, std::string &name)
+Tuning::SerializationResult CTuningCollection::DeserializeOLD(std::istream &inStrm, mpt::ustring &uname, mpt::Charset defaultCharset)
 {
 
 	//1. begin marker:
@@ -158,13 +161,17 @@ Tuning::SerializationResult CTuningCollection::DeserializeOLD(std::istream& inSt
 	//3. Name
 	if(version < 2)
 	{
+		std::string name;
 		if(!mpt::IO::ReadSizedStringLE<uint32>(inStrm, name, 256))
 			return Tuning::SerializationResult::Failure;
+		uname = mpt::ToUnicode(defaultCharset, name);
 	}
 	else
 	{
+		std::string name;
 		if(!mpt::IO::ReadSizedStringLE<uint8>(inStrm, name))
 			return Tuning::SerializationResult::Failure;
+		uname = mpt::ToUnicode(defaultCharset, name);
 	}
 
 	//4. Editmask
@@ -181,8 +188,10 @@ Tuning::SerializationResult CTuningCollection::DeserializeOLD(std::istream& inSt
 			return Tuning::SerializationResult::Failure;
 		for(size_t i = 0; i<s; i++)
 		{
-			if(AddTuning(inStrm))
+			if(!AddTuning(inStrm, defaultCharset))
+			{
 				return Tuning::SerializationResult::Failure;
+			}
 		}
 	}
 
@@ -225,37 +234,44 @@ bool CTuningCollection::Remove(const std::size_t i)
 }
 
 
-bool CTuningCollection::AddTuning(CTuning *pT)
+CTuning* CTuningCollection::AddTuning(std::unique_ptr<CTuning> pT)
 {
 	if(m_Tunings.size() >= s_nMaxTuningCount)
-		return true;
-
-	if(pT == NULL)
-		return true;
-
-	m_Tunings.push_back(std::unique_ptr<CTuning>(pT));
-
-	return false;
+	{
+		return nullptr;
+	}
+	if(!pT)
+	{
+		return nullptr;
+	}
+	CTuning *result = pT.get();
+	m_Tunings.push_back(std::move(pT));
+	return result;
 }
 
 
-bool CTuningCollection::AddTuning(std::istream& inStrm)
+CTuning* CTuningCollection::AddTuning(std::istream &inStrm, mpt::Charset defaultCharset)
 {
 	if(m_Tunings.size() >= s_nMaxTuningCount)
-		return true;
-
-	if(!inStrm.good()) return true;
-
-	CTuning* pT = CTuning::CreateDeserializeOLD(inStrm);
-	if(pT == 0) pT = CTuning::CreateDeserialize(inStrm);
-
-	if(pT == 0)
-		return true;
-	else
 	{
-		m_Tunings.push_back(std::unique_ptr<CTuning>(pT));
-		return false;
+		return nullptr;
 	}
+	if(!inStrm.good())
+	{
+		return nullptr;
+	}
+	std::unique_ptr<CTuning> pT = CTuning::CreateDeserializeOLD(inStrm, defaultCharset);
+	if(!pT)
+	{
+		pT = CTuning::CreateDeserialize(inStrm, defaultCharset);
+	}
+	if(!pT)
+	{
+		return nullptr;
+	}
+	CTuning *result = pT.get();
+	m_Tunings.push_back(std::move(pT));
+	return result;
 }
 
 
@@ -268,16 +284,16 @@ bool UnpackTuningCollection(const CTuningCollection &tc, const mpt::PathString &
 	auto numberFmt = mpt::FormatSpec().Dec().FillNul().Width(1 + static_cast<int>(std::log10(tc.GetNumTunings())));
 	for(std::size_t i = 0; i < tc.GetNumTunings(); ++i)
 	{
-		const CTuning & tuning = tc.GetTuning(i);
+		const CTuning & tuning = *(tc.GetTuning(i));
 		mpt::PathString fn;
 		fn += prefix;
-		mpt::ustring tuningName = mpt::ToUnicode(mpt::Charset::Locale, tuning.GetName());
+		mpt::ustring tuningName = tuning.GetName();
 		if(tuningName.empty())
 		{
 			tuningName = U_("untitled");
 		}
 		SanitizeFilename(tuningName);
-		fn += mpt::PathString::FromUnicode(mpt::format(U_("%1 - %2"))(mpt::ufmt::fmt(i + 1, numberFmt), tuningName));
+		fn += mpt::PathString::FromUnicode(MPT_UFORMAT("{} - {}")(mpt::ufmt::fmt(i + 1, numberFmt), tuningName));
 		fn += mpt::PathString::FromUTF8(CTuning::s_FileExtension);
 		if(fn.FileOrDirectoryExists())
 		{

@@ -10,10 +10,10 @@
 
 #pragma once
 
-#include "BuildSettings.h"
+#include "openmpt/all/BuildSettings.hpp"
 
 
-
+#include "mpt/base/source_location.hpp"
 #include "mptBaseMacros.h"
 
 
@@ -51,12 +51,12 @@ OPENMPT_NAMESPACE_BEGIN
 #endif // MPT_BUILD_ANALYZED
 
 #ifndef MPT_CHECKER_ASSUME
-#define MPT_CHECKER_ASSUME(x) MPT_DO { } MPT_WHILE_0
+#define MPT_CHECKER_ASSUME(x) do { } while(0)
 #endif
 
 
 
-#if defined(_MFC_VER) && !defined(MPT_CPPCHECK_CUSTOM)
+#if defined(MPT_WITH_MFC) && !defined(MPT_CPPCHECK_CUSTOM)
 
 #if !defined(ASSERT)
 #error "MFC is expected to #define ASSERT"
@@ -72,7 +72,7 @@ OPENMPT_NAMESPACE_BEGIN
 // let MFC handle our asserts
 #define MPT_ASSERT_USE_FRAMEWORK 1
 
-#else // !_MFC_VER
+#else // !MPT_WITH_MFC
 
 #if defined(ASSERT)
 #define MPT_FRAMEWORK_ASSERT_IS_DEFINED
@@ -86,7 +86,7 @@ OPENMPT_NAMESPACE_BEGIN
 // handle assert in our own way without relying on some platform-/framework-specific assert implementation
 #define MPT_ASSERT_USE_FRAMEWORK 0
 
-#endif // _MFC_VER
+#endif // MPT_WITH_MFC
 
 #if defined(MPT_FRAMEWORK_ASSERT_IS_DEFINED) && (MPT_ASSERT_USE_FRAMEWORK == 1)
 
@@ -97,8 +97,8 @@ OPENMPT_NAMESPACE_BEGIN
 #define MPT_ASSERT_ALWAYS(expr)          ASSERT((expr))
 #define MPT_ASSERT_ALWAYS_MSG(expr, msg) ASSERT((expr) && (msg))
 #else
-#define MPT_ASSERT_ALWAYS(expr)          MPT_DO { if(!(expr)) { AssertHandler(MPT_SOURCE_LOCATION_CURRENT(), #expr); } MPT_CHECKER_ASSUME(expr); } MPT_WHILE_0
-#define MPT_ASSERT_ALWAYS_MSG(expr, msg) MPT_DO { if(!(expr)) { AssertHandler(MPT_SOURCE_LOCATION_CURRENT(), #expr, msg); } MPT_CHECKER_ASSUME(expr); } MPT_WHILE_0
+#define MPT_ASSERT_ALWAYS(expr)          do { if(!(expr)) { OPENMPT_NAMESPACE::AssertHandler(MPT_SOURCE_LOCATION_CURRENT(), #expr); } MPT_CHECKER_ASSUME(expr); } while(0)
+#define MPT_ASSERT_ALWAYS_MSG(expr, msg) do { if(!(expr)) { OPENMPT_NAMESPACE::AssertHandler(MPT_SOURCE_LOCATION_CURRENT(), #expr, msg); } MPT_CHECKER_ASSUME(expr); } while(0)
 #ifndef MPT_ASSERT_HANDLER_NEEDED
 #define MPT_ASSERT_HANDLER_NEEDED
 #endif
@@ -109,19 +109,19 @@ OPENMPT_NAMESPACE_BEGIN
 #define MPT_ASSERT_NOTREACHED()          MPT_CHECKER_ASSUME(0)
 #define MPT_ASSERT(expr)                 MPT_CHECKER_ASSUME(expr)
 #define MPT_ASSERT_MSG(expr, msg)        MPT_CHECKER_ASSUME(expr)
-#define MPT_ASSERT_ALWAYS(expr)          MPT_DO { if(!(expr)) { AssertHandler(MPT_SOURCE_LOCATION_CURRENT(), #expr); } MPT_CHECKER_ASSUME(expr); } MPT_WHILE_0
-#define MPT_ASSERT_ALWAYS_MSG(expr, msg) MPT_DO { if(!(expr)) { AssertHandler(MPT_SOURCE_LOCATION_CURRENT(), #expr, msg); } MPT_CHECKER_ASSUME(expr); } MPT_WHILE_0
+#define MPT_ASSERT_ALWAYS(expr)          do { if(!(expr)) { OPENMPT_NAMESPACE::AssertHandler(MPT_SOURCE_LOCATION_CURRENT(), #expr); } MPT_CHECKER_ASSUME(expr); } while(0)
+#define MPT_ASSERT_ALWAYS_MSG(expr, msg) do { if(!(expr)) { OPENMPT_NAMESPACE::AssertHandler(MPT_SOURCE_LOCATION_CURRENT(), #expr, msg); } MPT_CHECKER_ASSUME(expr); } while(0)
 #ifndef MPT_ASSERT_HANDLER_NEEDED
 #define MPT_ASSERT_HANDLER_NEEDED
 #endif
 
 #else // !NO_ASSERTS
 
-#define MPT_ASSERT_NOTREACHED()          MPT_DO { if constexpr(!(0)) { AssertHandler(MPT_SOURCE_LOCATION_CURRENT(), "0"); } MPT_CHECKER_ASSUME(0); } MPT_WHILE_0
-#define MPT_ASSERT(expr)                 MPT_DO { if(!(expr)) { AssertHandler(MPT_SOURCE_LOCATION_CURRENT(), #expr); } MPT_CHECKER_ASSUME(expr); } MPT_WHILE_0
-#define MPT_ASSERT_MSG(expr, msg)        MPT_DO { if(!(expr)) { AssertHandler(MPT_SOURCE_LOCATION_CURRENT(), #expr, msg); } MPT_CHECKER_ASSUME(expr); } MPT_WHILE_0
-#define MPT_ASSERT_ALWAYS(expr)          MPT_DO { if(!(expr)) { AssertHandler(MPT_SOURCE_LOCATION_CURRENT(), #expr); } MPT_CHECKER_ASSUME(expr); } MPT_WHILE_0
-#define MPT_ASSERT_ALWAYS_MSG(expr, msg) MPT_DO { if(!(expr)) { AssertHandler(MPT_SOURCE_LOCATION_CURRENT(), #expr, msg); } MPT_CHECKER_ASSUME(expr); } MPT_WHILE_0
+#define MPT_ASSERT_NOTREACHED()          do { if constexpr(!(0)) { OPENMPT_NAMESPACE::AssertHandler(MPT_SOURCE_LOCATION_CURRENT(), "0"); } MPT_CHECKER_ASSUME(0); } while(0)
+#define MPT_ASSERT(expr)                 do { if(!(expr)) { OPENMPT_NAMESPACE::AssertHandler(MPT_SOURCE_LOCATION_CURRENT(), #expr); } MPT_CHECKER_ASSUME(expr); } while(0)
+#define MPT_ASSERT_MSG(expr, msg)        do { if(!(expr)) { OPENMPT_NAMESPACE::AssertHandler(MPT_SOURCE_LOCATION_CURRENT(), #expr, msg); } MPT_CHECKER_ASSUME(expr); } while(0)
+#define MPT_ASSERT_ALWAYS(expr)          do { if(!(expr)) { OPENMPT_NAMESPACE::AssertHandler(MPT_SOURCE_LOCATION_CURRENT(), #expr); } MPT_CHECKER_ASSUME(expr); } while(0)
+#define MPT_ASSERT_ALWAYS_MSG(expr, msg) do { if(!(expr)) { OPENMPT_NAMESPACE::AssertHandler(MPT_SOURCE_LOCATION_CURRENT(), #expr, msg); } MPT_CHECKER_ASSUME(expr); } while(0)
 #ifndef MPT_ASSERT_HANDLER_NEEDED
 #define MPT_ASSERT_HANDLER_NEEDED
 #endif
@@ -133,12 +133,6 @@ OPENMPT_NAMESPACE_BEGIN
 // custom assert handler needed
 MPT_NOINLINE void AssertHandler(const mpt::source_location &loc, const char *expr, const char *msg=nullptr);
 #endif // MPT_ASSERT_HANDLER_NEEDED
-
-
-
-#define MPT_CONSTEXPR11_ASSERT static_assert
-#define MPT_CONSTEXPR14_ASSERT static_assert
-#define MPT_CONSTEXPR17_ASSERT static_assert
 
 
 

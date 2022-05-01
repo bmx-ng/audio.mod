@@ -802,6 +802,7 @@ Declare Function openmpt_module_get_repeat_count(ByVal module As openmpt_module 
 
   \param module The module handle to work on.
   \return Approximate duration of current sub-song in seconds.
+  \remarks The function may return infinity if the pattern data is too complex to evaluate.
 '/
 Declare Function openmpt_module_get_duration_seconds(ByVal module As openmpt_module Ptr) As Double
 
@@ -981,7 +982,7 @@ Declare Function openmpt_module_read_interleaved_stereo(ByVal module As openmpt_
   \param module The module handle to work on.
   \param samplerate Sample rate to render output. Should be in [8000,192000], but this is not enforced.
   \param count Number of audio frames to render per channel.
-  \param interleaved_quad Pointer to a buffer of at least count*4 elements that receives the interleaved suad surround output in the order (L,R,RL,RR).
+  \param interleaved_quad Pointer to a buffer of at least count*4 elements that receives the interleaved quad surround output in the order (L,R,RL,RR).
   \return The number of frames actually rendered.
   \retval 0 The end of song has been reached.
   \remarks The output buffers are only written to up to the returned number of elements.
@@ -1011,7 +1012,7 @@ Declare Function openmpt_module_read_interleaved_float_stereo(ByVal module As op
   \param module The module handle to work on.
   \param samplerate Sample rate to render output. Should be in [8000,192000], but this is not enforced.
   \param count Number of audio frames to render per channel.
-  \param interleaved_quad Pointer to a buffer of at least count*4 elements that receives the interleaved suad surround output in the order (L,R,RL,RR).
+  \param interleaved_quad Pointer to a buffer of at least count*4 elements that receives the interleaved quad surround output in the order (L,R,RL,RR).
   \return The number of frames actually rendered.
   \retval 0 The end of song has been reached.
   \remarks The output buffers are only written to up to the returned number of elements.
@@ -1036,7 +1037,7 @@ Declare Function openmpt_module_get_metadata_keys_ Alias "openmpt_module_get_met
   \param module The module handle to work on.
   \param key Metadata item key to query. Use openmpt_module_get_metadata_keys to check for available keys.
            Possible keys are:
-           - type: Module format extension (e.g. it)
+           - type: Module format extension (e.g. it) or another similar identifier for modules formats that typically do not use a file extension
            - type_long: Format name associated with the module format (e.g. Impulse Tracker)
            - originaltype: Module format extension (e.g. it) of the original module in case the actual type is a converted format (e.g. mo3 or gdm)
            - originaltype_long: Format name associated with the module format (e.g. Impulse Tracker) of the original module in case the actual type is a converted format (e.g. mo3 or gdm)
@@ -1054,6 +1055,15 @@ Declare Function openmpt_module_get_metadata_keys_ Alias "openmpt_module_get_met
   \remarks Use openmpt_module_get_metadata to automatically handle the lifetime of the returned pointer.
 '/
 Declare Function openmpt_module_get_metadata_ Alias "openmpt_module_get_metadata" (ByVal module As openmpt_module Ptr, ByVal key As Const ZString Ptr) As Const ZString Ptr
+
+/'* \brief Get the current estimated beats per minute (BPM).
+
+  \param module The module handle to work on.
+  \remarks Many module formats lack time signature metadata. It is common that this estimate is off by a factor of two, but other multipliers are also possible.
+  \remarks Due to the nature of how module tempo works, the estimate may change slightly after switching libopenmpt's output to a different sample rate.
+  \return The current estimated BPM.
+'/
+Declare Function openmpt_module_get_current_estimated_bpm(ByVal module As openmpt_module Ptr) As Double
 
 /'* \brief Get the current speed
 
@@ -1356,6 +1366,11 @@ Declare Function openmpt_module_highlight_pattern_row_channel_ Alias "openmpt_mo
            - play.tempo_factor: Set a floating point tempo factor. "1.0" is the default tempo.
            - play.pitch_factor: Set a floating point pitch factor. "1.0" is the default pitch.
            - render.resampler.emulate_amiga: Set to "1" to enable the Amiga resampler for Amiga modules. This emulates the sound characteristics of the Paula chip and overrides the selected interpolation filter. Non-Amiga module formats are not affected by this setting.
+           - render.resampler.emulate_amiga_type: Configures the filter type to use for the Amiga resampler. Supported values are:
+                     - "auto": Filter type is chosen by the library and might change. This is the default.
+                     - "a500": Amiga A500 filter.
+                     - "a1200": Amiga A1200 filter.
+                     - "unfiltered": BLEP synthesis without model-specific filters. The LED filter is ignored by this setting. This filter mode is considered to be experimental and might change in the future.
            - render.opl.volume_factor: Set volume factor applied to synthesized OPL sounds, relative to the default OPL volume.
            - dither: Set the dither algorithm that is used for the 16 bit versions of openmpt_module_read. Supported values are:
                      - 0: No dithering.

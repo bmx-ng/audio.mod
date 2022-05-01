@@ -10,6 +10,8 @@
 #ifndef LIBOPENMPT_CONFIG_H
 #define LIBOPENMPT_CONFIG_H
 
+/* clang-format off */
+
 /*! \defgroup libopenmpt libopenmpt */
 
 /*! \addtogroup libopenmpt
@@ -21,6 +23,14 @@
 #undef LIBOPENMPT_API
 #define LIBOPENMPT_CXX_API
 #undef LIBOPENMPT_CXX_API
+
+/*!
+  @}
+*/
+
+/*! \addtogroup libopenmpt_c
+  @{
+*/
 
 /*! \brief Defined if libopenmpt/libopenmpt_stream_callbacks_buffer.h exists. */
 #define LIBOPENMPT_STREAM_CALLBACKS_BUFFER
@@ -50,6 +60,14 @@
  *   \endcode
  */
 #define LIBOPENMPT_STREAM_CALLBACKS_FILE
+
+/*!
+  @}
+*/
+
+/*! \addtogroup libopenmpt
+  @{
+*/
 
 #if defined(__DOXYGEN__)
 
@@ -148,6 +166,8 @@
 #else
 #define LIBOPENMPT_DEPRECATED
 #endif
+#else
+#define LIBOPENMPT_DEPRECATED
 #endif
 
 #ifndef __cplusplus
@@ -157,6 +177,8 @@ LIBOPENMPT_DEPRECATED static const int LIBOPENMPT_DEPRECATED_STRING_CONSTANT = 0
 #else
 #define LIBOPENMPT_DEPRECATED_STRING( str ) str
 #endif
+#else
+#define LIBOPENMPT_DEPRECATED_STRING( str ) str
 #endif
 
 
@@ -175,6 +197,8 @@ LIBOPENMPT_DEPRECATED static const int LIBOPENMPT_DEPRECATED_STRING_CONSTANT = 0
 
 #endif
 
+
+/* clang-format on */
 
 #include "libopenmpt_version.h"
 

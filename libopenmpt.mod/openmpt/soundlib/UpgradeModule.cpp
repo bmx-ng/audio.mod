@@ -10,6 +10,7 @@
 
 #include "stdafx.h"
 #include "Sndfile.h"
+#include "plugins/PluginManager.h"
 #include "../common/mptStringBuffer.h"
 #include "../common/version.h"
 
@@ -95,7 +96,10 @@ struct UpgradePatternData
 			{
 				if((m.param & 0x0F) != 0x00 && (m.param & 0x0F) != 0x0F && (m.param & 0xF0) != 0x00 && (m.param & 0xF0) != 0xF0)
 				{
-					m.param &= 0x0F;
+					if(m.command == CMD_GLOBALVOLSLIDE)
+						m.param &= 0xF0;
+					else
+						m.param &= 0x0F;
 				}
 			}
 
@@ -108,6 +112,12 @@ struct UpgradePatternData
 					m.volcmd = VOLCMD_VOLUME;
 					m.vol = 0;
 				}
+			}
+
+			// Command I11 accidentally behaved the same as command I00 with compatible IT tremor and old effects disabled
+			if(m.command == CMD_TREMOR && m.param == 0x11 && version < MPT_V("1.29.12.02") && sndFile.m_playBehaviour[kITTremor] && !sndFile.m_SongFlags[SONG_ITOLDEFFECTS])
+			{
+				m.param = 0;
 			}
 		}
 
@@ -218,6 +228,14 @@ struct UpgradePatternData
 			m.volcmd = VOLCMD_NONE;
 		}
 
+		// Previously CMD_OFFSET simply overrode VOLCMD_OFFSET, now they work together as a combined command
+		if(m.volcmd == VOLCMD_OFFSET && m.command == CMD_OFFSET && version < MPT_V("1.30.00.14"))
+		{
+			if(m.param != 0 || m.vol == 0)
+				m.volcmd = VOLCMD_NONE;
+			else
+				m.command = CMD_NONE;
+		}
 	}
 
 	const CSoundFile &sndFile;
@@ -247,7 +265,7 @@ void CSoundFile::UpgradeModule()
 
 			if(!compatModeIT || m_dwLastSavedWithVersion < MPT_V("1.18.00.00"))
 			{
-				// Previously, Pitch/Pan Separation was only half depth.
+				// Previously, Pitch/Pan Separation was only half depth (plot twist: it was actually only quarter depth).
 				// This was corrected in compatible mode in OpenMPT 1.18, and in OpenMPT 1.20 it is corrected in normal mode as well.
 				ins->nPPS = (ins->nPPS + (ins->nPPS >= 0 ? 1 : -1)) / 2;
 			}
@@ -353,9 +371,9 @@ void CSoundFile::UpgradeModule()
 	{
 		if(m_dwLastSavedWithVersion >= MPT_V("1.22.07.19")
 			&& m_dwLastSavedWithVersion < MPT_V("1.23.01.04")
-			&& GetMixLevels() == mixLevelsCompatible)
+			&& GetMixLevels() == MixLevels::Compatible)
 		{
-			SetMixLevels(mixLevelsCompatibleFT2);
+			SetMixLevels(MixLevels::CompatibleFT2);
 		}
 	}
 
@@ -420,6 +438,18 @@ void CSoundFile::UpgradeModule()
 			if(Instruments[i]->pluginVolumeHandling == PLUGIN_VOLUMEHANDLING_MIDI || Instruments[i]->pluginVolumeHandling == PLUGIN_VOLUMEHANDLING_DRYWET)
 			{
 				m_playBehaviour.set(kMIDIVolumeOnNoteOffBug);
+				break;
+			}
+		}
+	}
+
+	if(m_dwLastSavedWithVersion < MPT_V("1.30.00.54"))
+	{
+		for(SAMPLEINDEX i = 1; i <= GetNumSamples(); i++)
+		{
+			if(Samples[i].HasSampleData() && Samples[i].uFlags[CHN_PINGPONGLOOP | CHN_PINGPONGSUSTAIN])
+			{
+				m_playBehaviour.set(kImprecisePingPongLoops);
 				break;
 			}
 		}
@@ -506,7 +536,7 @@ void CSoundFile::UpgradeModule()
 			{ kFT2PortaNoNote,           MPT_V("1.17.03.02") },
 			{ kFT2KeyOff,                MPT_V("1.17.03.02") },
 			{ kFT2PanSlide,              MPT_V("1.17.03.02") },
-			{ kFT2OffsetOutOfRange,      MPT_V("1.17.03.02") },
+			{ kFT2ST3OffsetOutOfRange,   MPT_V("1.17.03.02") },
 			{ kFT2RestrictXCommand,      MPT_V("1.18.00.00") },
 			{ kFT2RetrigWithNoteDelay,   MPT_V("1.18.00.00") },
 			{ kFT2SetPanEnvPos,          MPT_V("1.18.00.00") },
@@ -544,6 +574,8 @@ void CSoundFile::UpgradeModule()
 			{ kITInstrWithNoteOffOldEffects,  MPT_V("1.28.02.06") },
 			{ kITDoNotOverrideChannelPan,     MPT_V("1.29.00.22") },
 			{ kITPatternLoopWithJumps,        MPT_V("1.29.00.32") },
+			{ kITDCTBehaviour,                MPT_V("1.29.00.57") },
+			{ kITPitchPanSeparation,          MPT_V("1.30.00.53") },
 		};
 
 		for(const auto &b : behaviours)
@@ -561,11 +593,12 @@ void CSoundFile::UpgradeModule()
 		{
 			{ kFT2NoteOffFlags,              MPT_V("1.27.00.27") },
 			{ kRowDelayWithNoteDelay,        MPT_V("1.27.00.37") },
-			{ kFT2TremoloRampWaveform,       MPT_V("1.27.00.37") },
+			{ kFT2MODTremoloRampWaveform,    MPT_V("1.27.00.37") },
 			{ kFT2PortaUpDownMemory,         MPT_V("1.27.00.37") },
 			{ kFT2PanSustainRelease,         MPT_V("1.28.00.09") },
 			{ kFT2NoteDelayWithoutInstr,     MPT_V("1.28.00.44") },
-			{ kITFT2DontResetNoteOffOnPorta, MPT_V("1.29.00.34" )},
+			{ kITFT2DontResetNoteOffOnPorta, MPT_V("1.29.00.34") },
+			{ kFT2PortaResetDirection,       MPT_V("1.30.00.40") },
 		};
 
 		for(const auto &b : behaviours)
@@ -586,6 +619,9 @@ void CSoundFile::UpgradeModule()
 			{ kITPanbrelloHold,            MPT_V("1.26.00.00") },
 			{ KST3PortaAfterArpeggio,      MPT_V("1.27.00.00") },
 			{ kST3OffsetWithoutInstrument, MPT_V("1.28.00.00") },
+			{ kST3RetrigAfterNoteCut,      MPT_V("1.29.00.00") },
+			{ kFT2ST3OffsetOutOfRange,     MPT_V("1.29.00.00") },
+			{ kApplyUpperPeriodLimit,      MPT_V("1.30.00.45") },
 		};
 
 		for(const auto &b : behaviours)
@@ -624,14 +660,24 @@ void CSoundFile::UpgradeModule()
 		m_playBehaviour.set(kSlidesAtSpeed1);
 	}
 
-	if(m_dwLastSavedWithVersion < MPT_V("1.24.00.00"))
+	if(m_SongFlags[SONG_LINEARSLIDES])
 	{
-		// No frequency slides in Hz before OpenMPT 1.24
-		m_playBehaviour.reset(kHertzInLinearMode);
-	} else if(m_dwLastSavedWithVersion >= MPT_V("1.24.00.00") && m_dwLastSavedWithVersion < MPT_V("1.26.00.00") && (GetType() & (MOD_TYPE_IT | MOD_TYPE_MPT)))
+		if(m_dwLastSavedWithVersion < MPT_V("1.24.00.00"))
+		{
+			// No frequency slides in Hz before OpenMPT 1.24
+			m_playBehaviour.reset(kPeriodsAreHertz);
+		} else if(m_dwLastSavedWithVersion >= MPT_V("1.24.00.00") && m_dwLastSavedWithVersion < MPT_V("1.26.00.00") && (GetType() & (MOD_TYPE_IT | MOD_TYPE_MPT)))
+		{
+			// Frequency slides were always in Hz rather than periods in this version range.
+			m_playBehaviour.set(kPeriodsAreHertz);
+		}
+	} else
 	{
-		// Frequency slides were always in Hz rather than periods in this version range.
-		m_playBehaviour.set(kHertzInLinearMode);
+		if(m_dwLastSavedWithVersion < MPT_V("1.30.00.36") && m_dwLastSavedWithVersion != MPT_V("1.30.00.00"))
+		{
+			// No frequency slides in Hz before OpenMPT 1.30
+			m_playBehaviour.reset(kPeriodsAreHertz);
+		}
 	}
 
 	if(m_playBehaviour[kITEnvelopePositionHandling]
@@ -647,6 +693,37 @@ void CSoundFile::UpgradeModule()
 				m_playBehaviour.set(kReleaseNodePastSustainBug);
 				break;
 			}
+		}
+	}
+
+	if(GetType() & (MOD_TYPE_MPT | MOD_TYPE_S3M))
+	{
+		for(SAMPLEINDEX i = 1; i <= GetNumSamples(); i++)
+		{
+			if(Samples[i].uFlags[CHN_ADLIB])
+			{
+				if(GetType() == MOD_TYPE_MPT && GetNumInstruments() && m_dwLastSavedWithVersion >= MPT_V("1.28.00.20") && m_dwLastSavedWithVersion <= MPT_V("1.29.00.55"))
+					m_playBehaviour.set(kOPLNoResetAtEnvelopeEnd);
+				if(m_dwLastSavedWithVersion <= MPT_V("1.30.00.34") && m_dwLastSavedWithVersion != MPT_V("1.30"))
+					m_playBehaviour.reset(kOPLNoteOffOnNoteChange);
+				if(GetType() == MOD_TYPE_S3M && m_dwLastSavedWithVersion < MPT_V("1.29"))
+					m_playBehaviour.set(kOPLRealRetrig);
+				else if(GetType() != MOD_TYPE_S3M)
+					m_playBehaviour.reset(kOPLRealRetrig);
+				break;
+			}
+		}
+	}
+
+	if(m_dwLastSavedWithVersion >= MPT_V("1.27.00.42") && m_dwLastSavedWithVersion < MPT_V("1.30.00.46") && (GetType() & (MOD_TYPE_IT | MOD_TYPE_MPT | MOD_TYPE_XM)))
+	{
+		// The Flanger DMO plugin is almost identical to the Chorus... but only almost.
+		// The effect implementation was the same in OpenMPT 1.27-1.29, now it isn't anymore.
+		// As the old implementation continues to exist for the Chorus plugin, there is a legacy wrapper for the Flanger plugin.
+		for(auto &plugin : m_MixPlugins)
+		{
+			if(plugin.Info.dwPluginId1 == kDmoMagic && plugin.Info.dwPluginId2 == int32(0xEFCA3D92) && plugin.pluginData.size() == 32)
+				plugin.Info.szLibraryName = "Flanger (Legacy)";
 		}
 	}
 }

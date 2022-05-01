@@ -67,7 +67,7 @@ uint16 XMInstrument::ConvertToXM(const ModInstrument &mptIns, bool compatibility
 
 	// Create sample assignment table
 	auto sampleList = GetSampleList(mptIns, compatibilityExport);
-	for(size_t i = 0; i < CountOf(sampleMap); i++)
+	for(std::size_t i = 0; i < std::size(sampleMap); i++)
 	{
 		if(mptIns.Keyboard[i + 12] > 0)
 		{
@@ -99,7 +99,7 @@ std::vector<SAMPLEINDEX> XMInstrument::GetSampleList(const ModInstrument &mptIns
 	std::vector<bool> addedToList;			// Which samples did we already add to the sample list?
 
 	uint8 numSamples = 0;
-	for(size_t i = 0; i < CountOf(sampleMap); i++)
+	for(std::size_t i = 0; i < std::size(sampleMap); i++)
 	{
 		const SAMPLEINDEX smp = mptIns.Keyboard[i + 12];
 		if(smp > 0)
@@ -142,16 +142,15 @@ void XMInstrument::ConvertEnvelopeToMPT(InstrumentEnvelope &mptEnv, uint8 numPoi
 			break;
 		}
 
-		if(i > 0 && mptEnv[i].tick < mptEnv[i - 1].tick)
+		if(i > 0 && mptEnv[i].tick < mptEnv[i - 1].tick && !(mptEnv[i].tick & 0xFF00))
 		{
 			// libmikmod code says: "Some broken XM editing program will only save the low byte of the position
 			// value. Try to compensate by adding the missing high byte."
-			// Note: It appears that MPT 1.07's XI instrument saver omitted the high byte of envelope nodes.
+			// Note: MPT 1.07's XI instrument saver omitted the high byte of envelope nodes.
 			// This might be the source for some broken envelopes in IT and XM files.
-
-			mptEnv[i].tick &= 0xFF;
-			mptEnv[i].tick += mptEnv[i - 1].tick & 0xFF00;
-			if(mptEnv[i].tick < mptEnv[i - 1].tick) mptEnv[i].tick += 0x100;
+			mptEnv[i].tick |= mptEnv[i - 1].tick & 0xFF00;
+			if(mptEnv[i].tick < mptEnv[i - 1].tick)
+				mptEnv[i].tick += 0x100;
 		}
 	}
 
@@ -185,7 +184,7 @@ void XMInstrument::ConvertToMPT(ModInstrument &mptIns) const
 	ConvertEnvelopeToMPT(mptIns.PanEnv, panPoints, panFlags, panSustain, panLoopStart, panLoopEnd, EnvTypePan);
 
 	// Create sample assignment table
-	for(size_t i = 0; i < CountOf(sampleMap); i++)
+	for(std::size_t i = 0; i < std::size(sampleMap); i++)
 	{
 		mptIns.Keyboard[i + 12] = sampleMap[i];
 	}
@@ -260,7 +259,7 @@ void XMInstrumentHeader::ConvertToMPT(ModInstrument &mptIns) const
 	instrument.ConvertToMPT(mptIns);
 
 	// Create sample assignment table
-	for(size_t i = 0; i < CountOf(instrument.sampleMap); i++)
+	for(std::size_t i = 0; i < std::size(instrument.sampleMap); i++)
 	{
 		if(instrument.sampleMap[i] < numSamples)
 		{
@@ -303,7 +302,7 @@ void XIInstrumentHeader::ConvertToMPT(ModInstrument &mptIns) const
 	instrument.ConvertToMPT(mptIns);
 
 	// Fix sample assignment table
-	for(size_t i = 12; i < CountOf(instrument.sampleMap) + 12; i++)
+	for(std::size_t i = 12; i < std::size(instrument.sampleMap) + 12; i++)
 	{
 		if(mptIns.Keyboard[i] >= numSamples)
 		{
@@ -331,9 +330,7 @@ void XMSample::ConvertToXM(const ModSample &mptSmp, MODTYPE fromType, bool compa
 		relnote = mptSmp.RelativeTone;
 	} else
 	{
-		int f2t = ModSample::FrequencyToTranspose(mptSmp.nC5Speed);
-		relnote = (int8)(f2t >> 7);
-		finetune = (int8)(f2t & 0x7F);
+		std::tie(relnote, finetune) = ModSample::FrequencyToTranspose(mptSmp.nC5Speed);
 	}
 
 	flags = 0;
@@ -401,7 +398,7 @@ void XMSample::ConvertToMPT(ModSample &mptSmp) const
 		mptSmp.nLoopEnd /= 2;
 	}
 
-	if((flags & (XMSample::sampleLoop | XMSample::sampleBidiLoop)) && mptSmp.nLoopStart < mptSmp.nLength && mptSmp.nLoopEnd > mptSmp.nLoopStart)
+	if((flags & (XMSample::sampleLoop | XMSample::sampleBidiLoop)) && mptSmp.nLoopEnd > mptSmp.nLoopStart)
 	{
 		mptSmp.uFlags.set(CHN_LOOP);
 		if((flags & XMSample::sampleBidiLoop))

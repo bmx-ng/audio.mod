@@ -14,6 +14,12 @@
 #include "stdafx.h"
 #include "Loaders.h"
 
+#ifndef MODPLUG_NO_FILESAVE
+#include "mpt/io/base.hpp"
+#include "mpt/io/io.hpp"
+#include "mpt/io/io_stdstream.hpp"
+#endif
+
 OPENMPT_NAMESPACE_BEGIN
 
 /*---------------------------------------------------------------------------------------------
@@ -79,7 +85,7 @@ DT..	[EXT]	nDefaultTempo;
 DTFR	[EXT]	Fractional part of default tempo
 DNA.			nDNA;
 EBIH	[EXT]	embeded instrument header tag (ITP file format)
-FM..			nFilterMode;
+FM..			filterMode;
 fn[.			filename[12];
 FO..			nFadeOut;
 GV..			nGlobalVol;
@@ -298,6 +304,7 @@ void WriteInstrumentHeaderStructOrField(ModInstrument * input, std::ostream &fil
 		MPT_ASSERT(fixedsize > 0);
 	}
 
+	// clang-format off
 	WRITE_MPTHEADER_sized_member(	nFadeOut					, uint32	, MagicBE("FO..")	)
 	WRITE_MPTHEADER_sized_member(	nPan						, uint32	, MagicBE("P...")	)
 	WRITE_MPTHEADER_sized_member(	VolEnv.size()				, uint32	, MagicBE("VE..")	)
@@ -317,7 +324,7 @@ void WriteInstrumentHeaderStructOrField(ModInstrument * input, std::ostream &fil
 	WRITE_MPTHEADER_sized_member(	resampling					, uint8		, MagicBE("R...")	)
 	WRITE_MPTHEADER_sized_member(	nCutSwing					, uint8		, MagicBE("CS..")	)
 	WRITE_MPTHEADER_sized_member(	nResSwing					, uint8		, MagicBE("RS..")	)
-	WRITE_MPTHEADER_sized_member(	nFilterMode					, uint8		, MagicBE("FM..")	)
+	WRITE_MPTHEADER_sized_member(	filterMode					, uint8		, MagicBE("FM..")	)
 	WRITE_MPTHEADER_sized_member(	pluginVelocityHandling		, uint8		, MagicBE("PVEH")	)
 	WRITE_MPTHEADER_sized_member(	pluginVolumeHandling		, uint8		, MagicBE("PVOH")	)
 	WRITE_MPTHEADER_trunc_member(	pitchToTempoLock.GetInt()	, uint16	, MagicBE("PTTL")	)
@@ -329,6 +336,8 @@ void WriteInstrumentHeaderStructOrField(ModInstrument * input, std::ostream &fil
 	WRITE_MPTHEADER_sized_member(	PanEnv.dwFlags				, uint8		, MagicBE("AFLG")	)
 	WRITE_MPTHEADER_sized_member(	VolEnv.dwFlags				, uint8		, MagicBE("VFLG")	)
 	WRITE_MPTHEADER_sized_member(	midiPWD						, int8		, MagicBE("MPWD")	)
+	// clang-format on
+
 }
 
 
@@ -387,7 +396,7 @@ void CSoundFile::SaveExtendedInstrumentProperties(INSTRUMENTINDEX numInstruments
 		WritePropertyIfNeeded(*this, &ModInstrument::nPan, MagicBE("P..."), sizeof(ModInstrument::nPan), f, numInstruments);
 		WritePropertyIfNeeded(*this, &ModInstrument::nCutSwing, MagicBE("CS.."), sizeof(ModInstrument::nCutSwing), f, numInstruments);
 		WritePropertyIfNeeded(*this, &ModInstrument::nResSwing, MagicBE("RS.."), sizeof(ModInstrument::nResSwing), f, numInstruments);
-		WritePropertyIfNeeded(*this, &ModInstrument::nFilterMode, MagicBE("FM.."), sizeof(ModInstrument::nFilterMode), f, numInstruments);
+		WritePropertyIfNeeded(*this, &ModInstrument::filterMode, MagicBE("FM.."), sizeof(ModInstrument::filterMode), f, numInstruments);
 		if(IsPropertyNeeded(Instruments, &ModInstrument::pitchToTempoLock))
 		{
 			WriteInstrumentPropertyForAllInstruments(MagicBE("PTTL"), sizeof(uint16), f, numInstruments);
@@ -485,10 +494,10 @@ void CSoundFile::WriteInstrumentPropertyForAllInstruments(uint32 code, uint16 si
 #define GET_MPTHEADER_array_member(name,type,code) \
 	case code: \
 	{\
-		if( fsize <= sizeof( type ) * CountOf(input-> name) ) \
+		if( fsize <= sizeof( type ) * std::size(input-> name) ) \
 		{ \
 			FileReader arrayChunk = file.ReadChunk(fsize); \
-			for(std::size_t i = 0; i < CountOf(input-> name); ++i) \
+			for(std::size_t i = 0; i < std::size(input-> name); ++i) \
 			{ \
 				input-> name [i] = arrayChunk.ReadIntLE<type>(); \
 			} \
@@ -541,6 +550,7 @@ bool ReadInstrumentHeaderField(ModInstrument *input, uint32 fcode, uint16 fsize,
 	// Members which can be found in this table but not in the write table are only required in the legacy ITP format.
 	switch(fcode)
 	{
+	// clang-format off
 	GET_MPTHEADER_sized_member(	nFadeOut				, uint32		, MagicBE("FO..")	)
 	GET_MPTHEADER_sized_member(	dwFlags					, uint8			, MagicBE("dF..")	)
 	GET_MPTHEADER_sized_member(	nGlobalVol				, uint32		, MagicBE("GV..")	)
@@ -583,7 +593,7 @@ bool ReadInstrumentHeaderField(ModInstrument *input, uint32 fcode, uint16 fsize,
 	GET_MPTHEADER_sized_member(	nVolRampUp				, uint16		, MagicBE("VR..")	)
 	GET_MPTHEADER_sized_member(	nCutSwing				, uint8			, MagicBE("CS..")	)
 	GET_MPTHEADER_sized_member(	nResSwing				, uint8			, MagicBE("RS..")	)
-	GET_MPTHEADER_sized_member(	nFilterMode				, uint8			, MagicBE("FM..")	)
+	GET_MPTHEADER_sized_member(	filterMode				, uint8			, MagicBE("FM..")	)
 	GET_MPTHEADER_sized_member(	pluginVelocityHandling	, uint8			, MagicBE("PVEH")	)
 	GET_MPTHEADER_sized_member(	pluginVolumeHandling	, uint8			, MagicBE("PVOH")	)
 	GET_MPTHEADER_sized_member(	PitchEnv.nReleaseNode	, uint8			, MagicBE("PERN")	)
@@ -593,10 +603,11 @@ bool ReadInstrumentHeaderField(ModInstrument *input, uint32 fcode, uint16 fsize,
 	GET_MPTHEADER_sized_member(	PanEnv.dwFlags			, uint8			, MagicBE("AFLG")	)
 	GET_MPTHEADER_sized_member(	VolEnv.dwFlags			, uint8			, MagicBE("VFLG")	)
 	GET_MPTHEADER_sized_member(	midiPWD					, int8			, MagicBE("MPWD")	)
+	// clang-format on
 	case MagicBE("R..."):
 	{
 		// Resampling has been written as various sizes including uint16 and uint32 in the past
-		uint32 tmp = file.ReadTruncatedIntLE<uint32>(fsize);
+		uint32 tmp = file.ReadSizedIntLE<uint32>(fsize);
 		if(Resampling::IsKnownMode(tmp))
 			input->resampling = static_cast<ResamplingMode>(tmp);
 		result = true;
@@ -604,27 +615,27 @@ bool ReadInstrumentHeaderField(ModInstrument *input, uint32 fcode, uint16 fsize,
 	case MagicBE("PTTL"):
 	{
 		// Integer part of pitch/tempo lock
-		uint16 tmp = file.ReadTruncatedIntLE<uint16>(fsize);
+		uint16 tmp = file.ReadSizedIntLE<uint16>(fsize);
 		input->pitchToTempoLock.Set(tmp, input->pitchToTempoLock.GetFract());
 		result = true;
 	} break;
 	case MagicLE("PTTF"):
 	{
 		// Fractional part of pitch/tempo lock
-		uint16 tmp = file.ReadTruncatedIntLE<uint16>(fsize);
+		uint16 tmp = file.ReadSizedIntLE<uint16>(fsize);
 		input->pitchToTempoLock.Set(input->pitchToTempoLock.GetInt(), tmp);
 		result = true;
 	} break;
 	case MagicBE("VE.."):
-		input->VolEnv.resize(std::min(uint32(MAX_ENVPOINTS), file.ReadTruncatedIntLE<uint32>(fsize)));
+		input->VolEnv.resize(std::min(uint32(MAX_ENVPOINTS), file.ReadSizedIntLE<uint32>(fsize)));
 		result = true;
 		break;
 	case MagicBE("PE.."):
-		input->PanEnv.resize(std::min(uint32(MAX_ENVPOINTS), file.ReadTruncatedIntLE<uint32>(fsize)));
+		input->PanEnv.resize(std::min(uint32(MAX_ENVPOINTS), file.ReadSizedIntLE<uint32>(fsize)));
 		result = true;
 		break;
 	case MagicBE("PiE."):
-		input->PitchEnv.resize(std::min(uint32(MAX_ENVPOINTS), file.ReadTruncatedIntLE<uint32>(fsize)));
+		input->PitchEnv.resize(std::min(uint32(MAX_ENVPOINTS), file.ReadSizedIntLE<uint32>(fsize)));
 		result = true;
 		break;
 	}

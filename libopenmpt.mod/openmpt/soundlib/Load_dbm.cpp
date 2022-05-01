@@ -10,7 +10,6 @@
 
 #include "stdafx.h"
 #include "Loaders.h"
-#include "ChunkReader.h"
 #include "../common/mptStringBuffer.h"
 #ifndef NO_PLUGINS
 #include "plugins/DigiBoosterEcho.h"
@@ -127,7 +126,7 @@ MPT_BINARY_STRUCT(DBMEnvelope, 136)
 
 
 // Note: Unlike in MOD, 1Fx, 2Fx, 5Fx / 5xF, 6Fx / 6xF and AFx / AxF are fine slides.
-static const ModCommand::COMMAND dbmEffects[] =
+static constexpr ModCommand::COMMAND dbmEffects[] =
 {
 	CMD_ARPEGGIO, CMD_PORTAMENTOUP, CMD_PORTAMENTODOWN, CMD_TONEPORTAMENTO,
 	CMD_VIBRATO, CMD_TONEPORTAVOL, CMD_VIBRATOVOL, CMD_TREMOLO,
@@ -150,7 +149,7 @@ static const ModCommand::COMMAND dbmEffects[] =
 static void ConvertDBMEffect(uint8 &command, uint8 &param)
 {
 	uint8 oldCmd = command;
-	if(command < CountOf(dbmEffects))
+	if(command < std::size(dbmEffects))
 		command = dbmEffects[command];
 	else
 		command = CMD_NONE;
@@ -353,8 +352,8 @@ bool CSoundFile::ReadDBM(FileReader &file, ModLoadingFlags loadFlags)
 
 	m_modFormat.formatName = U_("DigiBooster Pro");
 	m_modFormat.type = U_("dbm");
-	m_modFormat.madeWithTracker = mpt::format(U_("DigiBooster Pro %1.%2"))(mpt::ufmt::hex(fileHeader.trkVerHi), mpt::ufmt::hex(fileHeader.trkVerLo));
-	m_modFormat.charset = mpt::Charset::ISO8859_1;
+	m_modFormat.madeWithTracker = MPT_UFORMAT("DigiBooster Pro {}.{}")(mpt::ufmt::hex(fileHeader.trkVerHi), mpt::ufmt::hex(fileHeader.trkVerLo));
+	m_modFormat.charset = mpt::Charset::Amiga_no_C1;
 
 	// Name chunk
 	FileReader nameChunk = chunks.GetChunk(DBMChunk::idNAME);
@@ -378,10 +377,10 @@ bool CSoundFile::ReadDBM(FileReader &file, ModLoadingFlags loadFlags)
 		if(!Order().empty())
 		{
 			// Add a new sequence for this song
-			if(Order.AddSequence(false) == SEQUENCEINDEX_INVALID)
+			if(Order.AddSequence() == SEQUENCEINDEX_INVALID)
 				break;
 		}
-		Order().SetName(name);
+		Order().SetName(mpt::ToUnicode(mpt::Charset::Amiga_no_C1, name));
 		ReadOrderFromFile<uint16be>(Order(), songChunk, numOrders);
 #else
 		const ORDERINDEX startIndex = Order().GetLength();
@@ -413,7 +412,6 @@ bool CSoundFile::ReadDBM(FileReader &file, ModLoadingFlags loadFlags)
 			{
 				continue;
 			}
-			ModSample &mptSmp = Samples[instrHeader.sample];
 
 			mptIns->name = mpt::String::ReadBuf(mpt::String::maybeNullTerminated, instrHeader.name);
 			m_szNames[instrHeader.sample] = mpt::String::ReadBuf(mpt::String::maybeNullTerminated, instrHeader.name);
@@ -424,6 +422,7 @@ bool CSoundFile::ReadDBM(FileReader &file, ModLoadingFlags loadFlags)
 			mptIns->dwFlags.set(INS_SETPANNING);
 
 			// Sample Info
+			ModSample &mptSmp = Samples[instrHeader.sample];
 			mptSmp.Initialize();
 			mptSmp.nVolume = std::min(static_cast<uint16>(instrHeader.volume), uint16(64)) * 4u;
 			mptSmp.nC5Speed = instrHeader.sampleRate;
@@ -433,7 +432,8 @@ bool CSoundFile::ReadDBM(FileReader &file, ModLoadingFlags loadFlags)
 				mptSmp.nLoopStart = instrHeader.loopStart;
 				mptSmp.nLoopEnd = mptSmp.nLoopStart + instrHeader.loopLength;
 				mptSmp.uFlags.set(CHN_LOOP);
-				if(instrHeader.flags & DBMInstrument::smpPingPongLoop) mptSmp.uFlags.set(CHN_PINGPONGLOOP);
+				if(instrHeader.flags & DBMInstrument::smpPingPongLoop)
+					mptSmp.uFlags.set(CHN_PINGPONGLOOP);
 			}
 		}
 
@@ -462,6 +462,7 @@ bool CSoundFile::ReadDBM(FileReader &file, ModLoadingFlags loadFlags)
 		patternNameChunk.Skip(1);	// Encoding, should be UTF-8 or ASCII
 
 		Patterns.ResizeArray(infoData.patterns);
+		std::vector<std::pair<EffectCommand, ModCommand::PARAM>> lostGlobalCommands;
 		for(PATTERNINDEX pat = 0; pat < infoData.patterns; pat++)
 		{
 			uint16 numRows = patternChunk.ReadUint16BE();
@@ -469,9 +470,7 @@ bool CSoundFile::ReadDBM(FileReader &file, ModLoadingFlags loadFlags)
 			FileReader chunk = patternChunk.ReadChunk(packedSize);
 
 			if(!Patterns.Insert(pat, numRows))
-			{
 				continue;
-			}
 
 			std::string patName;
 			patternNameChunk.ReadSizedString<uint8be, mpt::String::maybeNullTerminated>(patName);
@@ -479,6 +478,7 @@ bool CSoundFile::ReadDBM(FileReader &file, ModLoadingFlags loadFlags)
 
 			PatternRow patRow = Patterns[pat].GetRow(0);
 			ROWINDEX row = 0;
+			lostGlobalCommands.clear();
 			while(chunk.CanRead(1))
 			{
 				const uint8 ch = chunk.ReadUint8();
@@ -486,6 +486,12 @@ bool CSoundFile::ReadDBM(FileReader &file, ModLoadingFlags loadFlags)
 				if(!ch)
 				{
 					// End Of Row
+					for(const auto &cmd : lostGlobalCommands)
+					{
+						Patterns[pat].WriteEffect(EffectWriter(cmd.first, cmd.second).Row(row));
+					}
+					lostGlobalCommands.clear();
+
 					if(++row >= numRows)
 						break;
 
@@ -503,12 +509,9 @@ bool CSoundFile::ReadDBM(FileReader &file, ModLoadingFlags loadFlags)
 					uint8 note = chunk.ReadUint8();
 
 					if(note == 0x1F)
-						note = NOTE_KEYOFF;
+						m.note = NOTE_KEYOFF;
 					else if(note > 0 && note < 0xFE)
-					{
-						note = ((note >> 4) * 12) + (note & 0x0F) + 13;
-					}
-					m.note = note;
+						m.note = ((note >> 4) * 12) + (note & 0x0F) + 13;
 				}
 				if(b & 0x02)
 				{
@@ -516,8 +519,7 @@ bool CSoundFile::ReadDBM(FileReader &file, ModLoadingFlags loadFlags)
 				}
 				if(b & 0x3C)
 				{
-					uint8 cmd1 = CMD_NONE, cmd2 = CMD_NONE;
-					uint8 param1 = 0, param2 = 0;
+					uint8 cmd1 = 0, cmd2 = 0, param1 = 0, param2 = 0;
 					if(b & 0x04) cmd2 = chunk.ReadUint8();
 					if(b & 0x08) param2 = chunk.ReadUint8();
 					if(b & 0x10) cmd1 = chunk.ReadUint8();
@@ -531,7 +533,9 @@ bool CSoundFile::ReadDBM(FileReader &file, ModLoadingFlags loadFlags)
 						std::swap(param1, param2);
 					}
 
-					ModCommand::TwoRegularCommandsToMPT(cmd1, param1, cmd2, param2);
+					const auto lostCommand = ModCommand::TwoRegularCommandsToMPT(cmd1, param1, cmd2, param2);
+					if(ModCommand::IsGlobalCommand(lostCommand.first, lostCommand.second))
+						lostGlobalCommands.insert(lostGlobalCommands.begin(), lostCommand);  // Insert at front so that the last command of same type "wins"
 
 					m.volcmd = cmd1;
 					m.vol = param1;
@@ -620,10 +624,10 @@ bool CSoundFile::ReadDBM(FileReader &file, ModLoadingFlags loadFlags)
 		for(uint32 i = 0; i < 32; i++)
 		{
 			uint32 param = (i * 127u) / 32u;
-			mpt::String::WriteAutoBuf(m_MidiCfg.szMidiZXXExt[i     ]) = mpt::format("F0F080%1")(mpt::fmt::HEX0<2>(param));
-			mpt::String::WriteAutoBuf(m_MidiCfg.szMidiZXXExt[i + 32]) = mpt::format("F0F081%1")(mpt::fmt::HEX0<2>(param));
-			mpt::String::WriteAutoBuf(m_MidiCfg.szMidiZXXExt[i + 64]) = mpt::format("F0F082%1")(mpt::fmt::HEX0<2>(param));
-			mpt::String::WriteAutoBuf(m_MidiCfg.szMidiZXXExt[i + 96]) = mpt::format("F0F083%1")(mpt::fmt::HEX0<2>(param));
+			m_MidiCfg.Zxx[i     ] = MPT_AFORMAT("F0F080{}")(mpt::afmt::HEX0<2>(param));
+			m_MidiCfg.Zxx[i + 32] = MPT_AFORMAT("F0F081{}")(mpt::afmt::HEX0<2>(param));
+			m_MidiCfg.Zxx[i + 64] = MPT_AFORMAT("F0F082{}")(mpt::afmt::HEX0<2>(param));
+			m_MidiCfg.Zxx[i + 96] = MPT_AFORMAT("F0F083{}")(mpt::afmt::HEX0<2>(param));
 		}
 	}
 #endif // NO_PLUGINS
@@ -637,11 +641,11 @@ bool CSoundFile::ReadDBM(FileReader &file, ModLoadingFlags loadFlags)
 			uint32 sampleFlags = sampleChunk.ReadUint32BE();
 			uint32 sampleLength = sampleChunk.ReadUint32BE();
 
-			ModSample &sample = Samples[smp];
-			sample.nLength = sampleLength;
-
 			if(sampleFlags & 7)
 			{
+				ModSample &sample = Samples[smp];
+				sample.nLength = sampleLength;
+
 				SampleIO(
 					(sampleFlags & 4) ? SampleIO::_32bit : ((sampleFlags & 2) ? SampleIO::_16bit : SampleIO::_8bit),
 					SampleIO::mono,

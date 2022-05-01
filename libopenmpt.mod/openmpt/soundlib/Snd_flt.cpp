@@ -1,5 +1,5 @@
 /*
- * snd_flt.cpp
+ * Snd_flt.cpp
  * -----------
  * Purpose: Calculation of resonant filter coefficients.
  * Notes  : Extended filter range was introduced in MPT 1.12 and went up to 8652 Hz.
@@ -15,6 +15,7 @@
 #include "Sndfile.h"
 #include "Tables.h"
 #include "../common/misc_util.h"
+#include "mpt/base/numbers.hpp"
 
 
 OPENMPT_NAMESPACE_BEGIN
@@ -31,7 +32,7 @@ uint8 CSoundFile::FrequencyToCutOff(double frequency) const
 	// <==========> Rewrite as x = (log2(cutoff) - log2(110) - 0.25) * y.
 	// <==========> Rewrite as x = (ln(cutoff) - ln(110) - 0.25*ln(2)) * y/ln(2).
 	//                                           <4.8737671609324025>
-	double cutoff = (std::log(frequency) - 4.8737671609324025) * (m_SongFlags[SONG_EXFILTERRANGE] ? (20.0 / M_LN2) : (24.0 / M_LN2));
+	double cutoff = (std::log(frequency) - 4.8737671609324025) * (m_SongFlags[SONG_EXFILTERRANGE] ? (20.0 / mpt::numbers::ln2) : (24.0 / mpt::numbers::ln2));
 	Limit(cutoff, 0.0, 127.0);
 	return mpt::saturate_round<uint8>(cutoff);
 }
@@ -81,10 +82,10 @@ int CSoundFile::SetupChannelFilter(ModChannel &chn, bool bReset, int envModifier
 	// Filtering is only ever done in IT if either cutoff is not full or if resonance is set.
 	if(m_playBehaviour[kITFilterBehaviour] && resonance == 0 && computedCutoff >= 254)
 	{
-		if(chn.rowCommand.IsNote() && !chn.rowCommand.IsPortamento() && !chn.nMasterChn && m_SongFlags[SONG_FIRSTTICK])
+		if(chn.rowCommand.IsNote() && !chn.rowCommand.IsPortamento() && !chn.nMasterChn && chn.triggerNote)
 		{
 			// Z7F next to a note disables the filter, however in other cases this should not happen.
-			// Test cases: filter-reset.it, filter-reset-carry.it, filter-nna.it
+			// Test cases: filter-reset.it, filter-reset-carry.it, filter-reset-envelope.it, filter-nna.it, FilterResetPatDelay.it
 			chn.dwFlags.reset(CHN_FILTER);
 		}
 		return -1;
@@ -94,7 +95,7 @@ int CSoundFile::SetupChannelFilter(ModChannel &chn, bool bReset, int envModifier
 
 	// 2 * damping factor
 	const float dmpfac = std::pow(10.0f, -resonance * ((24.0f / 128.0f) / 20.0f));
-	const float fc = CutOffToFrequency(cutoff, envModifier) * (2.0f * (float)M_PI);
+	const float fc = CutOffToFrequency(cutoff, envModifier) * (2.0f * mpt::numbers::pi_v<float>);
 	float d, e;
 	if(m_playBehaviour[kITFilterBehaviour] && !m_SongFlags[SONG_EXFILTERRANGE])
 	{
@@ -117,17 +118,17 @@ int CSoundFile::SetupChannelFilter(ModChannel &chn, bool bReset, int envModifier
 	float fb1 = -e / (1.0f + d + e);
 
 #if defined(MPT_INTMIXER)
-#define FILTER_CONVERT(x) mpt::saturate_round<mixsample_t>((x) * (1 << MIXING_FILTER_PRECISION))
+#define MPT_FILTER_CONVERT(x) mpt::saturate_round<mixsample_t>((x) * (1 << MIXING_FILTER_PRECISION))
 #else
-#define FILTER_CONVERT(x) (x)
+#define MPT_FILTER_CONVERT(x) (x)
 #endif
 
 	switch(chn.nFilterMode)
 	{
-	case FLTMODE_HIGHPASS:
-		chn.nFilter_A0 = FILTER_CONVERT(1.0f - fg);
-		chn.nFilter_B0 = FILTER_CONVERT(fb0);
-		chn.nFilter_B1 = FILTER_CONVERT(fb1);
+	case FilterMode::HighPass:
+		chn.nFilter_A0 = MPT_FILTER_CONVERT(1.0f - fg);
+		chn.nFilter_B0 = MPT_FILTER_CONVERT(fb0);
+		chn.nFilter_B1 = MPT_FILTER_CONVERT(fb1);
 #ifdef MPT_INTMIXER
 		chn.nFilter_HP = -1;
 #else
@@ -136,9 +137,9 @@ int CSoundFile::SetupChannelFilter(ModChannel &chn, bool bReset, int envModifier
 		break;
 
 	default:
-		chn.nFilter_A0 = FILTER_CONVERT(fg);
-		chn.nFilter_B0 = FILTER_CONVERT(fb0);
-		chn.nFilter_B1 = FILTER_CONVERT(fb1);
+		chn.nFilter_A0 = MPT_FILTER_CONVERT(fg);
+		chn.nFilter_B0 = MPT_FILTER_CONVERT(fb0);
+		chn.nFilter_B1 = MPT_FILTER_CONVERT(fb1);
 #ifdef MPT_INTMIXER
 		if(chn.nFilter_A0 == 0)
 			chn.nFilter_A0 = 1;	// Prevent silence at low filter cutoff and very high sampling rate
@@ -148,7 +149,7 @@ int CSoundFile::SetupChannelFilter(ModChannel &chn, bool bReset, int envModifier
 #endif // MPT_INTMIXER
 		break;
 	}
-#undef FILTER_CONVERT
+#undef MPT_FILTER_CONVERT
 
 	if (bReset)
 	{

@@ -9,12 +9,13 @@
 
 #pragma once
 
-#include "BuildSettings.h"
+#include "openmpt/all/BuildSettings.hpp"
 
 
 #include "WindowedFIR.h"
 #include "Mixer.h"
 #include "MixerSettings.h"
+#include "Paula.h"
 
 
 OPENMPT_NAMESPACE_BEGIN
@@ -32,7 +33,7 @@ OPENMPT_NAMESPACE_BEGIN
 // Caching gets triggered via a global object that primes the cache during
 //  construction.
 // This is only really useful with MPT_RESAMPLER_TABLES_CACHED.
-#define MPT_RESAMPLER_TABLES_CACHED_ONSTARTUP
+//#define MPT_RESAMPLER_TABLES_CACHED_ONSTARTUP
 
 #endif // LIBOPENMPT_BUILD
 
@@ -56,21 +57,22 @@ static_assert((SINC_MASK & 0xffff) == SINC_MASK); // exceeding fractional freq
 class CResamplerSettings
 {
 public:
-	ResamplingMode SrcMode;
-	double gdWFIRCutoff;
-	uint8 gbWFIRType;
-	bool emulateAmiga;
+	ResamplingMode SrcMode = Resampling::Default();
+	double gdWFIRCutoff = 0.97;
+	uint8 gbWFIRType = WFIR_KAISER4T;
+	Resampling::AmigaFilter emulateAmiga = Resampling::AmigaFilter::Off;
 public:
-	MPT_CONSTEXPR11_FUN CResamplerSettings()
-		: SrcMode(Resampling::Default())
-		, gdWFIRCutoff(0.97)
-		, gbWFIRType(WFIR_KAISER4T)
-		, emulateAmiga(false)
-	{
-	}
+	constexpr CResamplerSettings() = default;
 	bool operator == (const CResamplerSettings &cmp) const
 	{
+#if MPT_COMPILER_CLANG
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wfloat-equal"
+#endif // MPT_COMPILER_CLANG
 		return SrcMode == cmp.SrcMode && gdWFIRCutoff == cmp.gdWFIRCutoff && gbWFIRType == cmp.gbWFIRType && emulateAmiga == cmp.emulateAmiga;
+#if MPT_COMPILER_CLANG
+#pragma clang diagnostic pop
+#endif // MPT_COMPILER_CLANG
 	}
 	bool operator != (const CResamplerSettings &cmp) const { return !(*this == cmp); }
 };
@@ -94,6 +96,7 @@ public:
 	RESAMPLER_TABLE SINC_TYPE gKaiserSinc[SINC_PHASES * 8];     // Upsampling
 	RESAMPLER_TABLE SINC_TYPE gDownsample13x[SINC_PHASES * 8];  // Downsample 1.333x
 	RESAMPLER_TABLE SINC_TYPE gDownsample2x[SINC_PHASES * 8];   // Downsample 2x
+	RESAMPLER_TABLE Paula::BlepTables blepTables;               // Amiga BLEP resampler
 
 #ifndef MPT_INTMIXER
 	RESAMPLER_TABLE mixsample_t FastSincTablef[256 * 4];	// Cubic spline LUT
@@ -127,6 +130,7 @@ public:
 	{
 		InitializeTablesFromScratch(false);
 	}
+
 private:
 	void InitFloatmixerTables();
 	void InitializeTablesFromScratch(bool force=false);

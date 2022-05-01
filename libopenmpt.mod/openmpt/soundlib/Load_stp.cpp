@@ -256,9 +256,9 @@ bool CSoundFile::ReadSTP(FileReader &file, ModLoadingFlags loadFlags)
 
 	InitializeGlobals(MOD_TYPE_STP);
 
-	m_modFormat.formatName = mpt::format(U_("Soundtracker Pro II v%1"))(fileHeader.version);
+	m_modFormat.formatName = MPT_UFORMAT("Soundtracker Pro II v{}")(fileHeader.version);
 	m_modFormat.type = U_("stp");
-	m_modFormat.charset = mpt::Charset::ISO8859_1;
+	m_modFormat.charset = mpt::Charset::Amiga_no_C1;
 
 	m_nChannels = 4;
 	m_nSamples = 0;
@@ -333,7 +333,9 @@ bool CSoundFile::ReadSTP(FileReader &file, ModLoadingFlags loadFlags)
 			STPLoopList &loopList = loopInfo[actualSmp - 1];
 			loopList.clear();
 
-			uint16 numLoops = file.ReadUint16BE();
+			const uint16 numLoops = file.ReadUint16BE();
+			if(!file.CanRead(numLoops * 8u))
+				return false;
 			loopList.reserve(numLoops);
 
 			STPLoopInfo loop;
@@ -372,13 +374,13 @@ bool CSoundFile::ReadSTP(FileReader &file, ModLoadingFlags loadFlags)
 
 			patternLength = file.ReadUint16BE();
 			channels = file.ReadUint16BE();
+			if(channels > MAX_BASECHANNELS)
+				return false;
 			m_nChannels = std::max(m_nChannels, channels);
 
 			file.Skip(channels * patternLength * 4u);
 		}
 		file.Seek(patOffset);
-		if(m_nChannels > MAX_BASECHANNELS)
-			return false;
 	}
 
 	struct ChannelMemory
@@ -403,6 +405,9 @@ bool CSoundFile::ReadSTP(FileReader &file, ModLoadingFlags loadFlags)
 			patternLength = file.ReadUint16BE();
 			channels = file.ReadUint16BE();
 		}
+
+		if(!file.CanRead(channels * patternLength * 4u))
+			break;
 
 		if(!(loadFlags & loadPatternData) || !Patterns.Insert(actualPat, patternLength))
 		{
@@ -627,7 +632,7 @@ bool CSoundFile::ReadSTP(FileReader &file, ModLoadingFlags loadFlags)
 						m.param--;
 						if(m.param < loopList.size())
 						{
-							if(!loopList[m.param].looped && m_nSamples < MAX_SAMPLES - 1)
+							if(!loopList[m.param].looped && CanAddMoreSamples())
 								loopList[m.param].looped = ++m_nSamples;
 							m.instr = static_cast<ModCommand::INSTR>(loopList[m.param].looped);
 						}
@@ -648,7 +653,7 @@ bool CSoundFile::ReadSTP(FileReader &file, ModLoadingFlags loadFlags)
 							m.vol = m.param;
 						}
 						// switch to non-looped version of sample and create it if needed
-						if(!nonLooped[m.instr - 1] && m_nSamples < MAX_SAMPLES - 1)
+						if(!nonLooped[m.instr - 1] && CanAddMoreSamples())
 							nonLooped[m.instr - 1] = ++m_nSamples;
 						m.instr = static_cast<ModCommand::INSTR>(nonLooped[m.instr - 1]);
 					}
@@ -664,7 +669,7 @@ bool CSoundFile::ReadSTP(FileReader &file, ModLoadingFlags loadFlags)
 						m.param--;
 						if(m.param < loopList.size())
 						{
-							if(!loopList[m.param].nonLooped && m_nSamples < MAX_SAMPLES-1)
+							if(!loopList[m.param].nonLooped && CanAddMoreSamples())
 								loopList[m.param].nonLooped = ++m_nSamples;
 							m.instr = static_cast<ModCommand::INSTR>(loopList[m.param].nonLooped);
 						}
@@ -787,6 +792,7 @@ bool CSoundFile::ReadSTP(FileReader &file, ModLoadingFlags loadFlags)
 						else if(m.param & 0xF0)
 							m.param |= 0x0F;
 						didVolSlide = true;
+						MPT_UNUSED(didVolSlide);
 
 					} else if(chnMem.autoTremolo)
 					{

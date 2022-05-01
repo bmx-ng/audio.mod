@@ -11,7 +11,6 @@
 
 #include "stdafx.h"
 #include "Loaders.h"
-#include "ChunkReader.h"
 
 #ifdef LIBOPENMPT_BUILD
 #define MPT_PSM_USE_REAL_SUBSONGS
@@ -335,15 +334,15 @@ bool CSoundFile::ReadPSM(FileReader &file, ModLoadingFlags loadFlags)
 		if(!Order().empty())
 		{
 			// Add a new sequence for this subsong
-			if(Order.AddSequence(false) == SEQUENCEINDEX_INVALID)
+			if(Order.AddSequence() == SEQUENCEINDEX_INVALID)
 				break;
 		}
-		Order().SetName(subsong.songName);
+		Order().SetName(mpt::ToUnicode(mpt::Charset::CP437, subsong.songName));
 #endif // MPT_PSM_USE_REAL_SUBSONGS
 
 		// Read "Sub chunks"
 		auto subChunks = chunk.ReadChunks<PSMChunk>(1);
-		for(const auto &subChunkIter : subChunks)
+		for(const auto &subChunkIter : subChunks.chunks)
 		{
 			FileReader subChunk(subChunkIter.GetData());
 			PSMChunk subChunkHead = subChunkIter.GetHeader();

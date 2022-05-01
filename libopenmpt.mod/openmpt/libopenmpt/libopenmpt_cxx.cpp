@@ -7,7 +7,7 @@
  * The OpenMPT source code is released under the BSD license. Read LICENSE for more details.
  */
 
-#include "BuildSettings.h"
+#include "openmpt/all/BuildSettings.hpp"
 
 #include "libopenmpt_internal.h"
 #include "libopenmpt.hpp"
@@ -115,8 +115,6 @@ std::string get( const std::string & key ) {
 
 } // namespace openmpt
 
-#ifndef NO_LIBOPENMPT_CXX
-
 namespace openmpt {
 
 std::vector<std::string> get_supported_extensions() {
@@ -124,6 +122,9 @@ std::vector<std::string> get_supported_extensions() {
 }
 
 bool is_extension_supported( const std::string & extension ) {
+	return openmpt::module_impl::is_extension_supported( extension );
+}
+bool is_extension_supported2( std::string_view extension ) {
 	return openmpt::module_impl::is_extension_supported( extension );
 }
 
@@ -302,6 +303,9 @@ std::string module::get_metadata( const std::string & key ) const {
 	return impl->get_metadata( key );
 }
 
+double module::get_current_estimated_bpm() const {
+	return impl->get_current_estimated_bpm();
+}
 std::int32_t module::get_current_speed() const {
 	return impl->get_current_speed();
 }
@@ -403,11 +407,37 @@ std::string module::highlight_pattern_row_channel( std::int32_t pattern, std::in
 std::vector<std::string> module::get_ctls() const {
 	return impl->get_ctls();
 }
+
 std::string module::ctl_get( const std::string & ctl ) const {
 	return impl->ctl_get( ctl );
 }
+bool module::ctl_get_boolean( std::string_view ctl ) const {
+	return impl->ctl_get_boolean( ctl );
+}
+std::int64_t module::ctl_get_integer( std::string_view ctl ) const {
+	return impl->ctl_get_integer( ctl );
+}
+double module::ctl_get_floatingpoint( std::string_view ctl ) const {
+	return impl->ctl_get_floatingpoint( ctl );
+}
+std::string module::ctl_get_text( std::string_view ctl ) const {
+	return impl->ctl_get_text( ctl );
+}
+
 void module::ctl_set( const std::string & ctl, const std::string & value ) {
 	impl->ctl_set( ctl, value );
+}
+void module::ctl_set_boolean( std::string_view ctl, bool value ) {
+	impl->ctl_set_boolean( ctl, value );
+}
+void module::ctl_set_integer( std::string_view ctl, std::int64_t value ) {
+	impl->ctl_set_integer( ctl, value );
+}
+void module::ctl_set_floatingpoint( std::string_view ctl, double value ) {
+	impl->ctl_set_floatingpoint( ctl, value );
+}
+void module::ctl_set_text( std::string_view ctl, std::string_view value ) {
+	impl->ctl_set_text( ctl, value );
 }
 
 module_ext::module_ext( std::istream & stream, std::ostream & log, const std::map< std::string, std::string > & ctls ) : ext_impl(0) {
@@ -468,5 +498,3 @@ void * module_ext::get_interface( const std::string & interface_id ) {
 }
 
 } // namespace openmpt
-
-#endif // NO_LIBOPENMPT_CXX

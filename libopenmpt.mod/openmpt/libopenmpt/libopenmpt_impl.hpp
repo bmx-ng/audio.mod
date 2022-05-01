@@ -15,6 +15,7 @@
 
 #include <iosfwd>
 #include <memory>
+#include <utility>
 
 #if defined(_MSC_VER)
 #pragma warning(push)
@@ -22,17 +23,28 @@
 #endif
 
 // forward declarations
+namespace mpt {
+inline namespace mpt_libopenmpt {
+namespace IO {
+class FileCursorTraitsFileData;
+template <typename Tpath>
+class FileCursorFilenameTraits;
+template <typename Ttraits, typename Tfilenametraits>
+class FileCursor;
+} // namespace IO
+} // namespace mpt_libopenmpt
+} // namespace mpt
 namespace OpenMPT {
-class FileReaderTraitsStdStream;
-typedef FileReaderTraitsStdStream FileReaderTraitsDefault;
 namespace detail {
-template <typename Tbase>
-class FileReader;
+template <typename Ttraits, typename Tfilenametraits>
+using FileCursor = mpt::IO::FileCursor<Ttraits, Tfilenametraits>;
 } // namespace detail
-typedef detail::FileReader<FileReaderTraitsDefault> FileReader;
+namespace mpt {
+class PathString;
+} // namespace mpt
+using FileCursor = detail::FileCursor<mpt::IO::FileCursorTraitsFileData, mpt::IO::FileCursorFilenameTraits<mpt::PathString>>;
 class CSoundFile;
-template <std::size_t channels> class DitherChannels;
-using Dither = DitherChannels<4>;
+struct DithersWrapperOpenMPT;
 } // namespace OpenMPT
 
 namespace openmpt {
@@ -72,6 +84,14 @@ struct callback_stream_wrapper {
 }; // struct callback_stream_wrapper
 
 class module_impl {
+public:
+	enum class amiga_filter_type {
+		a500,
+		a1200,
+		unfiltered,
+		auto_filter,
+	};
+
 protected:
 	struct subsong_data {
 		double duration;
@@ -89,7 +109,18 @@ protected:
 		stop_song,
 	};
 
-	static const std::int32_t all_subsongs = -1;
+	static constexpr std::int32_t all_subsongs = -1;
+
+	enum class ctl_type {
+		boolean,
+		integer,
+		floatingpoint,
+		text,
+	};
+	struct ctl_info {
+		const char * name;
+		ctl_type type;
+	};
 
 	std::unique_ptr<log_interface> m_Log;
 	std::unique_ptr<log_forwarder> m_LogForwarder;
@@ -98,10 +129,11 @@ protected:
 	std::unique_ptr<OpenMPT::CSoundFile> m_sndFile;
 	bool m_loaded;
 	bool m_mixer_initialized;
-	std::unique_ptr<OpenMPT::Dither> m_Dither;
+	std::unique_ptr<OpenMPT::DithersWrapperOpenMPT> m_Dithers;
 	subsongs_type m_subsongs;
 	float m_Gain;
 	song_end_action m_ctl_play_at_end;
+	amiga_filter_type m_ctl_render_resampler_emulate_amiga_type = amiga_filter_type::auto_filter;
 	bool m_ctl_load_skip_samples;
 	bool m_ctl_load_skip_patterns;
 	bool m_ctl_load_skip_plugins;
@@ -119,19 +151,20 @@ protected:
 	void init_subsongs( subsongs_type & subsongs ) const;
 	bool has_subsongs_inited() const;
 	void ctor( const std::map< std::string, std::string > & ctls );
-	void load( const OpenMPT::FileReader & file, const std::map< std::string, std::string > & ctls );
+	void load( const OpenMPT::FileCursor & file, const std::map< std::string, std::string > & ctls );
 	bool is_loaded() const;
 	std::size_t read_wrapper( std::size_t count, std::int16_t * left, std::int16_t * right, std::int16_t * rear_left, std::int16_t * rear_right );
 	std::size_t read_wrapper( std::size_t count, float * left, float * right, float * rear_left, float * rear_right );
 	std::size_t read_interleaved_wrapper( std::size_t count, std::size_t channels, std::int16_t * interleaved );
 	std::size_t read_interleaved_wrapper( std::size_t count, std::size_t channels, float * interleaved );
+	std::string get_message_instruments() const;
+	std::string get_message_samples() const;
 	std::pair< std::string, std::string > format_and_highlight_pattern_row_channel_command( std::int32_t p, std::int32_t r, std::int32_t c, int command ) const;
 	std::pair< std::string, std::string > format_and_highlight_pattern_row_channel( std::int32_t p, std::int32_t r, std::int32_t c, std::size_t width, bool pad ) const;
-	static double could_open_probability( const OpenMPT::FileReader & file, double effort, std::unique_ptr<log_interface> log );
+	static double could_open_probability( const OpenMPT::FileCursor & file, double effort, std::unique_ptr<log_interface> log );
 public:
 	static std::vector<std::string> get_supported_extensions();
-	static bool is_extension_supported( const char * extension );
-	static bool is_extension_supported( const std::string & extension );
+	static bool is_extension_supported( std::string_view extension );
 	static double could_open_probability( callback_stream_wrapper stream, double effort, std::unique_ptr<log_interface> log );
 	static double could_open_probability( std::istream & stream, double effort, std::unique_ptr<log_interface> log );
 	static std::size_t probe_file_header_get_recommended_size();
@@ -176,6 +209,7 @@ public:
 	std::size_t read_interleaved_quad( std::int32_t samplerate, std::size_t count, float * interleaved_quad );
 	std::vector<std::string> get_metadata_keys() const;
 	std::string get_metadata( const std::string & key ) const;
+	double get_current_estimated_bpm() const;
 	std::int32_t get_current_speed() const;
 	std::int32_t get_current_tempo() const;
 	std::int32_t get_current_order() const;
@@ -206,9 +240,18 @@ public:
 	std::string highlight_pattern_row_channel_command( std::int32_t p, std::int32_t r, std::int32_t c, int cmd ) const;
 	std::string format_pattern_row_channel( std::int32_t p, std::int32_t r, std::int32_t c, std::size_t width, bool pad ) const;
 	std::string highlight_pattern_row_channel( std::int32_t p, std::int32_t r, std::int32_t c, std::size_t width, bool pad ) const;
+	std::pair<const module_impl::ctl_info *, const module_impl::ctl_info *> get_ctl_infos() const;
 	std::vector<std::string> get_ctls() const;
 	std::string ctl_get( std::string ctl, bool throw_if_unknown = true ) const;
+	bool ctl_get_boolean( std::string_view ctl, bool throw_if_unknown = true ) const;
+	std::int64_t ctl_get_integer( std::string_view ctl, bool throw_if_unknown = true ) const;
+	double ctl_get_floatingpoint( std::string_view ctl, bool throw_if_unknown = true ) const;
+	std::string ctl_get_text( std::string_view ctl, bool throw_if_unknown = true ) const;
 	void ctl_set( std::string ctl, const std::string & value, bool throw_if_unknown = true );
+	void ctl_set_boolean( std::string_view ctl, bool value, bool throw_if_unknown = true );
+	void ctl_set_integer( std::string_view ctl, std::int64_t value, bool throw_if_unknown = true );
+	void ctl_set_floatingpoint( std::string_view ctl, double value, bool throw_if_unknown = true );
+	void ctl_set_text( std::string_view ctl, std::string_view value, bool throw_if_unknown = true );
 }; // class module_impl
 
 namespace helper {

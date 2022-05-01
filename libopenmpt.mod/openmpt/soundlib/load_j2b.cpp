@@ -6,14 +6,15 @@
  *          It seems like no other game used the AM(FF) format.
  *          RIFF AM is the newer version of the format, generally following the RIFF "standard" closely.
  * Authors: Johannes Schultz (OpenMPT port, reverse engineering + loader implementation of the instrument format)
- *          Chris Moeller (foo_dumb - this is almost a complete port of his code, thanks)
+ *          kode54 (foo_dumb - this is almost a complete port of his code, thanks)
  * The OpenMPT source code is released under the BSD license. Read LICENSE for more details.
  */
 
 
 #include "stdafx.h"
 #include "Loaders.h"
-#include "ChunkReader.h"
+
+#include "mpt/io/base.hpp"
 
 #if defined(MPT_WITH_ZLIB)
 #include <zlib.h>
@@ -31,7 +32,7 @@ OPENMPT_NAMESPACE_BEGIN
 
 
 // First off, a nice vibrato translation LUT.
-static const VibratoType j2bAutoVibratoTrans[] = 
+static constexpr VibratoType j2bAutoVibratoTrans[] = 
 {
 	VIB_SINE, VIB_SQUARE, VIB_RAMP_UP, VIB_RAMP_DOWN, VIB_RANDOM,
 };
@@ -207,8 +208,8 @@ struct AMFFInstrumentHeader
 	{
 		mptIns.name = mpt::String::ReadBuf(mpt::String::maybeNullTerminated, name);
 
-		static_assert(CountOf(sampleMap) <= CountOf(mptIns.Keyboard));
-		for(size_t i = 0; i < CountOf(sampleMap); i++)
+		static_assert(mpt::array_size<decltype(sampleMap)>::size <= mpt::array_size<decltype(mptIns.Keyboard)>::size);
+		for(size_t i = 0; i < std::size(sampleMap); i++)
 		{
 			mptIns.Keyboard[i] = sampleMap[i] + baseSample + 1;
 		}
@@ -302,16 +303,16 @@ struct AMEnvelope
 	struct EnvPoint
 	{
 		uint16le tick;
-		uint16le value;
+		int16le value;
 	};
 
 	uint16le flags;
-	uint8le  numPoints;		// actually, it's num. points - 1, and 0xFF if there is no envelope
+	uint8le  numPoints;  // actually, it's num. points - 1, and 0xFF if there is no envelope
 	uint8le  sustainPoint;
 	uint8le  loopStart;
 	uint8le  loopEnd;
 	EnvPoint values[10];
-	uint16le fadeout;		// why is this here? it's only needed for the volume envelope...
+	uint16le fadeout;  // why is this here? it's only needed for the volume envelope...
 
 	// Convert envelope data to OpenMPT's internal format.
 	void ConvertToMPT(InstrumentEnvelope &mptEnv, EnvelopeType envType) const
@@ -326,6 +327,23 @@ struct AMEnvelope
 		mptEnv.nLoopStart = loopStart;
 		mptEnv.nLoopEnd = loopEnd;
 
+		int32 scale = 0, offset = 0;
+		switch(envType)
+		{
+		case ENV_VOLUME:  // 0....32767
+		default:
+			scale = 32767 / ENVELOPE_MAX;
+			break;
+		case ENV_PITCH:  // -4096....4096
+			scale = 8192 / ENVELOPE_MAX;
+			offset = 4096;
+			break;
+		case ENV_PANNING:  // -32768...32767
+			scale = 65536 / ENVELOPE_MAX;
+			offset = 32768;
+			break;
+		}
+
 		for(uint32 i = 0; i < mptEnv.size(); i++)
 		{
 			mptEnv[i].tick = values[i].tick >> 4;
@@ -334,21 +352,9 @@ struct AMEnvelope
 			else if(mptEnv[i].tick < mptEnv[i - 1].tick)
 				mptEnv[i].tick = mptEnv[i - 1].tick + 1;
 
-			const uint16 val = values[i].value;
-			switch(envType)
-			{
-			case ENV_VOLUME:	// 0....32767
-			default:
-				mptEnv[i].value = (uint8)((val + 1) >> 9);
-				break;
-			case ENV_PITCH:		// -4096....4096
-				mptEnv[i].value = (uint8)((((int16)val) + 0x1001) >> 7);
-				break;
-			case ENV_PANNING:	// -32768...32767
-				mptEnv[i].value = (uint8)((((int16)val) + 0x8001) >> 10);
-				break;
-			}
-			Limit(mptEnv[i].value, uint8(ENVELOPE_MIN), uint8(ENVELOPE_MAX));
+			int32 val = values[i].value + offset;
+			val = (val + scale / 2) / scale;
+			mptEnv[i].value = static_cast<EnvelopeNode::value_t>(std::clamp(val, int32(ENVELOPE_MIN), int32(ENVELOPE_MAX)));
 		}
 
 		mptEnv.dwFlags.set(ENV_ENABLED, (flags & AMFFEnvelope::envEnabled) != 0);
@@ -384,8 +390,8 @@ struct AMInstrumentHeader
 	{
 		mptIns.name = mpt::String::ReadBuf(mpt::String::maybeNullTerminated, name);
 
-		static_assert(CountOf(sampleMap) <= CountOf(mptIns.Keyboard));
-		for(uint8 i = 0; i < CountOf(sampleMap); i++)
+		static_assert(mpt::array_size<decltype(sampleMap)>::size <= mpt::array_size<decltype(mptIns.Keyboard)>::size);
+		for(uint8 i = 0; i < std::size(sampleMap); i++)
 		{
 			mptIns.Keyboard[i] = sampleMap[i] + baseSample + 1;
 		}
@@ -432,7 +438,7 @@ struct AMSampleHeader
 		mptSmp.nLoopEnd = loopEnd;
 		mptSmp.nC5Speed = sampleRate;
 
-		if(instrHeader.vibratoType < CountOf(j2bAutoVibratoTrans))
+		if(instrHeader.vibratoType < std::size(j2bAutoVibratoTrans))
 			mptSmp.nVibType = j2bAutoVibratoTrans[instrHeader.vibratoType];
 		mptSmp.nVibSweep = static_cast<uint8>(instrHeader.vibratoSweep);
 		mptSmp.nVibRate = static_cast<uint8>(instrHeader.vibratoRate / 16);
@@ -471,7 +477,7 @@ MPT_BINARY_STRUCT(AMSampleHeader, 60)
 static bool ConvertAMPattern(FileReader chunk, PATTERNINDEX pat, bool isAM, CSoundFile &sndFile)
 {
 	// Effect translation LUT
-	static const EffectCommand amEffTrans[] =
+	static constexpr EffectCommand amEffTrans[] =
 	{
 		CMD_ARPEGGIO, CMD_PORTAMENTOUP, CMD_PORTAMENTODOWN, CMD_TONEPORTAMENTO,
 		CMD_VIBRATO, CMD_TONEPORTAVOL, CMD_VIBRATOVOL, CMD_TREMOLO,
@@ -527,14 +533,14 @@ static bool ConvertAMPattern(FileReader chunk, PATTERNINDEX pat, bool isAM, CSou
 				m.param = chunk.ReadUint8();
 				uint8 command = chunk.ReadUint8();
 
-				if(command < CountOf(amEffTrans))
+				if(command < std::size(amEffTrans))
 				{
 					// command translation
 					m.command = amEffTrans[command];
 				} else
 				{
 #ifdef J2B_LOG
-					MPT_LOG(LogDebug, "J2B", mpt::uformat(U_("J2B: Unknown command: 0x%1, param 0x%2"))(mpt::ufmt::HEX0<2>(command), mpt::ufmt::HEX0<2>(m.param)));
+					MPT_LOG_GLOBAL(LogDebug, "J2B", MPT_UFORMAT("J2B: Unknown command: 0x{}, param 0x{}")(mpt::ufmt::HEX0<2>(command), mpt::ufmt::HEX0<2>(m.param)));
 #endif
 					m.command = CMD_NONE;
 				}
@@ -825,7 +831,7 @@ bool CSoundFile::ReadAM(FileReader &file, ModLoadingFlags loadFlags)
 			{
 				AMFFSampleHeader sampleHeader;
 
-				if(m_nSamples + 1 >= MAX_SAMPLES || !chunk.ReadStruct(sampleHeader))
+				if(!CanAddMoreSamples() || !chunk.ReadStruct(sampleHeader))
 				{
 					continue;
 				}
@@ -887,7 +893,7 @@ bool CSoundFile::ReadAM(FileReader &file, ModLoadingFlags loadFlags)
 
 			for(auto sampleChunk : sampleChunks)
 			{
-				if(sampleChunk.ReadUint32LE() != AMFFRiffChunk::idAS__ || m_nSamples + 1 >= MAX_SAMPLES)
+				if(sampleChunk.ReadUint32LE() != AMFFRiffChunk::idAS__ || !CanAddMoreSamples())
 				{
 					continue;
 				}
@@ -1032,7 +1038,7 @@ bool CSoundFile::ReadJ2B(FileReader &file, ModLoadingFlags loadFlags)
 	{
 		Bytef buffer[mpt::IO::BUFFERSIZE_TINY];
 		uint32 readSize = std::min(static_cast<uint32>(sizeof(buffer)), remainRead);
-		file.ReadRaw(buffer, readSize);
+		file.ReadRaw(mpt::span(buffer, readSize));
 		crc = crc32(crc, buffer, readSize);
 
 		strm.avail_in = readSize;

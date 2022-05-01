@@ -10,7 +10,6 @@
 
 #include "stdafx.h"
 #include "Loaders.h"
-#include "ChunkReader.h"
 
 OPENMPT_NAMESPACE_BEGIN
 
@@ -592,7 +591,7 @@ bool CSoundFile::ReadDTM(FileReader &file, ModLoadingFlags loadFlags)
 	} else if(FileReader chunk = chunks.GetChunk(DTMChunk::idVERS))
 	{
 		uint32 version = chunk.ReadUint32BE();
-		tracker = mpt::format(U_("Digital Tracker %1.%2"))(version >> 4, version & 0x0F);
+		tracker = MPT_UFORMAT("Digital Tracker {}.{}")(version >> 4, version & 0x0F);
 	} else
 	{
 		tracker = U_("Digital Tracker");
@@ -600,7 +599,7 @@ bool CSoundFile::ReadDTM(FileReader &file, ModLoadingFlags loadFlags)
 	m_modFormat.formatName = U_("Digital Tracker");
 	m_modFormat.type = U_("dtm");
 	m_modFormat.madeWithTracker = std::move(tracker);
-	m_modFormat.charset = mpt::Charset::ISO8859_1;
+	m_modFormat.charset = mpt::Charset::Amiga_no_C1;
 
 	return true;
 }

@@ -17,6 +17,7 @@
 #include <iostream>
 #include <map>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include <cstddef>
@@ -102,7 +103,7 @@
  * threads for internal use.
  * - You must ensure to only ever access a particular libopenmpt object via
  * non-const member functions from a single thread at a time.
- * - You may access a particular libopenmpt objects concurrently from different
+ * - You may access a particular libopenmpt object concurrently from different
  * threads when using only const member functions from all threads.
  * - Consecutive accesses can happen from different threads.
  * - Different objects can be accessed concurrently from different threads.
@@ -126,11 +127,11 @@
 
 /*! \defgroup libopenmpt_cpp libopenmpt C++ */
 
+namespace openmpt {
+
 /*! \addtogroup libopenmpt_cpp
   @{
 */
-
-namespace openmpt {
 
 #if defined(_MSC_VER)
 #pragma warning(push)
@@ -232,8 +233,16 @@ LIBOPENMPT_CXX_API std::vector<std::string> get_supported_extensions();
 /*!
   \param extension file extension to query without a leading dot. The case is ignored.
   \return true if the extension is supported by libopenmpt, false otherwise.
+  \deprecated Please use openmpt::is_extension_supported2().
 */
-LIBOPENMPT_CXX_API bool is_extension_supported( const std::string & extension );
+LIBOPENMPT_ATTR_DEPRECATED LIBOPENMPT_CXX_API bool is_extension_supported( const std::string & extension );
+//! Query whether a file extension is supported
+/*!
+  \param extension file extension to query without a leading dot. The case is ignored.
+  \return true if the extension is supported by libopenmpt, false otherwise.
+  \since 0.5.0
+*/
+LIBOPENMPT_CXX_API bool is_extension_supported2( std::string_view extension );
 
 //! Roughly scan the input stream to find out whether libopenmpt might be able to open it
 /*!
@@ -263,17 +272,29 @@ LIBOPENMPT_ATTR_DEPRECATED LIBOPENMPT_CXX_API double could_open_propability( std
 */
 LIBOPENMPT_CXX_API std::size_t probe_file_header_get_recommended_size();
 
-//! Probe for module formats in openmpt::probe_file_header(). \since 0.3.0
-static const std::uint64_t probe_file_header_flags_modules    = 0x1ul;
+//! Probe for module formats in openmpt::probe_file_header(). \since 0.3.0 \deprecated Please use openmpt::probe_file_header_flags_modules2.
+static const std::uint64_t probe_file_header_flags_modules    LIBOPENMPT_ATTR_DEPRECATED = 0x1ull;
 
-//! Probe for module-specific container formats in openmpt::probe_file_header(). \since 0.3.0
-static const std::uint64_t probe_file_header_flags_containers = 0x2ul;
+//! Probe for module-specific container formats in openmpt::probe_file_header(). \since 0.3.0 \deprecated Please use openmpt::probe_file_header_flags_containers2.
+static const std::uint64_t probe_file_header_flags_containers LIBOPENMPT_ATTR_DEPRECATED = 0x2ull;
 
-//! Probe for the default set of formats in openmpt::probe_file_header(). \since 0.3.0
-static const std::uint64_t probe_file_header_flags_default    = probe_file_header_flags_modules | probe_file_header_flags_containers;
+//! Probe for the default set of formats in openmpt::probe_file_header(). \since 0.3.0 \deprecated Please use openmpt::probe_file_header_flags_default2.
+static const std::uint64_t probe_file_header_flags_default    LIBOPENMPT_ATTR_DEPRECATED = 0x1ull | 0x2ull;
 
-//! Probe for no formats in openmpt::probe_file_header(). \since 0.3.0
-static const std::uint64_t probe_file_header_flags_none       = 0x0ul;
+//! Probe for no formats in openmpt::probe_file_header(). \since 0.3.0 \deprecated Please use openmpt::probe_file_header_flags_none2.
+static const std::uint64_t probe_file_header_flags_none       LIBOPENMPT_ATTR_DEPRECATED = 0x0ull;
+
+//! Possible values for openmpt::probe_file_header() flags parameter. \since 0.6.0
+enum probe_file_header_flags : std::uint64_t {
+	//! Probe for module formats in openmpt::probe_file_header(). \since 0.6.0
+	probe_file_header_flags_modules2    = 0x1ull,
+	//! Probe for module-specific container formats in openmpt::probe_file_header(). \since 0.6.0
+	probe_file_header_flags_containers2 = 0x2ull,
+	//! Probe for the default set of formats in openmpt::probe_file_header(). \since 0.6.0
+	probe_file_header_flags_default2    = probe_file_header_flags_modules2 | probe_file_header_flags_containers2,
+	//! Probe for no formats in openmpt::probe_file_header(). \since 0.6.0
+	probe_file_header_flags_none2       = 0x0ull
+};
 
 //! Possible return values for openmpt::probe_file_header(). \since 0.3.0
 enum probe_file_header_result {
@@ -284,7 +305,7 @@ enum probe_file_header_result {
 
 //! Probe the provided bytes from the beginning of a file for supported file format headers to find out whether libopenmpt might be able to open it
 /*!
-  \param flags Bit mask of openmpt::probe_file_header_flags_modules and openmpt::probe_file_header_flags_containers, or openmpt::probe_file_header_flags_default.
+  \param flags Bit mask of openmpt::probe_file_header_flags_modules2 and openmpt::probe_file_header_flags_containers2, or openmpt::probe_file_header_flags_default2.
   \param data Beginning of the file data.
   \param size Size of the beginning of the file data.
   \param filesize Full size of the file data on disk.
@@ -300,7 +321,7 @@ enum probe_file_header_result {
 LIBOPENMPT_CXX_API int probe_file_header( std::uint64_t flags, const std::byte * data, std::size_t size, std::uint64_t filesize );
 //! Probe the provided bytes from the beginning of a file for supported file format headers to find out whether libopenmpt might be able to open it
 /*!
-  \param flags Bit mask of openmpt::probe_file_header_flags_modules and openmpt::probe_file_header_flags_containers, or openmpt::probe_file_header_flags_default.
+  \param flags Bit mask of openmpt::probe_file_header_flags_modules2 and openmpt::probe_file_header_flags_containers2, or openmpt::probe_file_header_flags_default2.
   \param data Beginning of the file data.
   \param size Size of the beginning of the file data.
   \param filesize Full size of the file data on disk.
@@ -317,7 +338,7 @@ LIBOPENMPT_CXX_API int probe_file_header( std::uint64_t flags, const std::uint8_
 
 //! Probe the provided bytes from the beginning of a file for supported file format headers to find out whether libopenmpt might be able to open it
 /*!
-  \param flags Bit mask of openmpt::probe_file_header_flags_modules and openmpt::probe_file_header_flags_containers, or openmpt::probe_file_header_flags_default.
+  \param flags Bit mask of openmpt::probe_file_header_flags_modules2 and openmpt::probe_file_header_flags_containers2, or openmpt::probe_file_header_flags_default2.
   \param data Beginning of the file data.
   \param size Size of the beginning of the file data.
   \remarks It is recommended to use the overload of this function that also takes the filesize as parameter if at all possile. libopenmpt can provide more accurate answers if the filesize is known.
@@ -333,7 +354,7 @@ LIBOPENMPT_CXX_API int probe_file_header( std::uint64_t flags, const std::uint8_
 LIBOPENMPT_CXX_API int probe_file_header( std::uint64_t flags, const std::byte * data, std::size_t size );
 //! Probe the provided bytes from the beginning of a file for supported file format headers to find out whether libopenmpt might be able to open it
 /*!
-  \param flags Bit mask of openmpt::probe_file_header_flags_modules and openmpt::probe_file_header_flags_containers, or openmpt::probe_file_header_flags_default.
+  \param flags Bit mask of openmpt::probe_file_header_flags_modules2 and openmpt::probe_file_header_flags_containers2, or openmpt::probe_file_header_flags_default2.
   \param data Beginning of the file data.
   \param size Size of the beginning of the file data.
   \remarks It is recommended to use the overload of this function that also takes the filesize as parameter if at all possile. libopenmpt can provide more accurate answers if the filesize is known.
@@ -350,7 +371,7 @@ LIBOPENMPT_CXX_API int probe_file_header( std::uint64_t flags, const std::uint8_
 
 //! Probe the provided bytes from the beginning of a file for supported file format headers to find out whether libopenmpt might be able to open it
 /*!
-  \param flags Bit mask of openmpt::probe_file_header_flags_modules and openmpt::probe_file_header_flags_containers, or openmpt::probe_file_header_flags_default.
+  \param flags Bit mask of openmpt::probe_file_header_flags_modules2 and openmpt::probe_file_header_flags_containers2, or openmpt::probe_file_header_flags_default2.
   \param stream Input stream to scan.
   \remarks stream is left in an unspecified state when this function returns.
   \remarks openmpt::could_open_probability() provides a more elaborate interface that might be required for special use cases. It is recommended to use openmpt::probe_file_header() though, if possible.
@@ -590,6 +611,7 @@ public:
 	//! Get approximate song duration
 	/*!
 	  \return Approximate duration of current sub-song in seconds.
+	  \remarks The function may return infinity if the pattern data is too complex to evaluate.
 	*/
 	double get_duration_seconds() const;
 
@@ -741,7 +763,7 @@ public:
 	/*!
 	  \param samplerate Sample rate to render output. Should be in [8000,192000], but this is not enforced.
 	  \param count Number of audio frames to render per channel.
-	  \param interleaved_quad Pointer to a buffer of at least count*4 elements that receives the interleaved suad surround output in the order (L,R,RL,RR).
+	  \param interleaved_quad Pointer to a buffer of at least count*4 elements that receives the interleaved quad surround output in the order (L,R,RL,RR).
 	  \return The number of frames actually rendered.
 	  \retval 0 The end of song has been reached.
 	  \remarks The output buffers are only written to up to the returned number of elements.
@@ -767,7 +789,7 @@ public:
 	/*!
 	  \param samplerate Sample rate to render output. Should be in [8000,192000], but this is not enforced.
 	  \param count Number of audio frames to render per channel.
-	  \param interleaved_quad Pointer to a buffer of at least count*4 elements that receives the interleaved suad surround output in the order (L,R,RL,RR).
+	  \param interleaved_quad Pointer to a buffer of at least count*4 elements that receives the interleaved quad surround output in the order (L,R,RL,RR).
 	  \return The number of frames actually rendered.
 	  \retval 0 The end of song has been reached.
 	  \remarks The output buffers are only written to up to the returned number of elements.
@@ -788,7 +810,7 @@ public:
 	/*!
 	  \param key Metadata item key to query. Use openmpt::module::get_metadata_keys to check for available keys.
 	           Possible keys are:
-	           - type: Module format extension (e.g. it)
+	           - type: Module format extension (e.g. it) or another similar identifier for modules formats that typically do not use a file extension
 	           - type_long: Format name associated with the module format (e.g. Impulse Tracker)
 	           - originaltype: Module format extension (e.g. it) of the original module in case the actual type is a converted format (e.g. mo3 or gdm)
 	           - originaltype_long: Format name associated with the module format (e.g. Impulse Tracker) of the original module in case the actual type is a converted format (e.g. mo3 or gdm)
@@ -806,6 +828,13 @@ public:
 	*/
 	std::string get_metadata( const std::string & key ) const;
 
+	//! Get the current estimated beats per minute (BPM).
+	/*!
+	  \remarks Many module formats lack time signature metadata. It is common that this estimate is off by a factor of two, but other multipliers are also possible.
+	  \remarks Due to the nature of how module tempo works, the estimate may change slightly after switching libopenmpt's output to a different sample rate.
+	  \return The current estimated BPM.
+	*/
+	double get_current_estimated_bpm() const;
 	//! Get the current speed
 	/*!
 	  \return The current speed in ticks per row.
@@ -1027,21 +1056,26 @@ public:
 	/*!
 	  \return A vector containing all supported ctl keys.
 	  \remarks Currently supported ctl values are:
-	           - load.skip_samples: Set to "1" to avoid loading samples into memory
-	           - load.skip_patterns: Set to "1" to avoid loading patterns into memory
-	           - load.skip_plugins: Set to "1" to avoid loading plugins
-	           - load.skip_subsongs_init: Set to "1" to avoid pre-initializing sub-songs. Skipping results in faster module loading but slower seeking.
-	           - seek.sync_samples: Set to "1" to sync sample playback when using openmpt::module::set_position_seconds or openmpt::module::set_position_order_row.
-	           - subsong: The current subsong. Setting it has identical semantics as openmpt::module::select_subsong(), getting it returns the currently selected subsong.
-	           - play.at_end: Chooses the behaviour when the end of song is reached:
+	           - load.skip_samples (boolean): Set to "1" to avoid loading samples into memory
+	           - load.skip_patterns (boolean): Set to "1" to avoid loading patterns into memory
+	           - load.skip_plugins (boolean): Set to "1" to avoid loading plugins
+	           - load.skip_subsongs_init (boolean): Set to "1" to avoid pre-initializing sub-songs. Skipping results in faster module loading but slower seeking.
+	           - seek.sync_samples (boolean): Set to "1" to sync sample playback when using openmpt::module::set_position_seconds or openmpt::module::set_position_order_row.
+	           - subsong (integer): The current subsong. Setting it has identical semantics as openmpt::module::select_subsong(), getting it returns the currently selected subsong.
+	           - play.at_end (text): Chooses the behaviour when the end of song is reached:
 	                          - "fadeout": Fades the module out for a short while. Subsequent reads after the fadeout will return 0 rendered frames.
 	                          - "continue": Returns 0 rendered frames when the song end is reached. Subsequent reads will continue playing from the song start or loop start.
 	                          - "stop": Returns 0 rendered frames when the song end is reached. Subsequent reads will return 0 rendered frames.
-	           - play.tempo_factor: Set a floating point tempo factor. "1.0" is the default tempo.
-	           - play.pitch_factor: Set a floating point pitch factor. "1.0" is the default pitch.
-	           - render.resampler.emulate_amiga: Set to "1" to enable the Amiga resampler for Amiga modules. This emulates the sound characteristics of the Paula chip and overrides the selected interpolation filter. Non-Amiga module formats are not affected by this setting. 
-	           - render.opl.volume_factor: Set volume factor applied to synthesized OPL sounds, relative to the default OPL volume.
-	           - dither: Set the dither algorithm that is used for the 16 bit versions of openmpt::module::read. Supported values are:
+	           - play.tempo_factor (floatingpoint): Set a floating point tempo factor. "1.0" is the default tempo.
+	           - play.pitch_factor (floatingpoint): Set a floating point pitch factor. "1.0" is the default pitch.
+	           - render.resampler.emulate_amiga (boolean): Set to "1" to enable the Amiga resampler for Amiga modules. This emulates the sound characteristics of the Paula chip and overrides the selected interpolation filter. Non-Amiga module formats are not affected by this setting. 
+	           - render.resampler.emulate_amiga_type (string): Configures the filter type to use for the Amiga resampler. Supported values are:
+	                     - "auto": Filter type is chosen by the library and might change. This is the default.
+	                     - "a500": Amiga A500 filter.
+	                     - "a1200": Amiga A1200 filter.
+	                     - "unfiltered": BLEP synthesis without model-specific filters. The LED filter is ignored by this setting. This filter mode is considered to be experimental and might change in the future.
+	           - render.opl.volume_factor (floatingpoint): Set volume factor applied to synthesized OPL sounds, relative to the default OPL volume.
+	           - dither (integer): Set the dither algorithm that is used for the 16 bit versions of openmpt::module::read. Supported values are:
 	                     - 0: No dithering.
 	                     - 1: Default mode. Chosen by OpenMPT code, might change.
 	                     - 2: Rectangular, 0.5 bit depth, no noise shaping (original ModPlug Tracker).
@@ -1056,25 +1090,96 @@ public:
 	  \param ctl The ctl key whose value should be retrieved.
 	  \return The associated ctl value.
 	  \sa openmpt::module::get_ctls
+	  \deprecated Please use openmpt::module::ctl_get_boolean(), openmpt::module::ctl_get_integer(), openmpt::module::ctl_get_floatingpoint(), or openmpt::module::ctl_get_text().
 	*/
-	std::string ctl_get( const std::string & ctl ) const;
+	LIBOPENMPT_ATTR_DEPRECATED std::string ctl_get( const std::string & ctl ) const;
+	//! Get current ctl boolean value
+	/*!
+	  \param ctl The ctl key whose value should be retrieved.
+	  \return The associated ctl value.
+	  \sa openmpt::module::get_ctls
+	  \since 0.5.0
+	*/
+	bool ctl_get_boolean( std::string_view ctl ) const;
+	//! Get current ctl integer value
+	/*!
+	  \param ctl The ctl key whose value should be retrieved.
+	  \return The associated ctl value.
+	  \sa openmpt::module::get_ctls
+	  \since 0.5.0
+	*/
+	std::int64_t ctl_get_integer( std::string_view ctl ) const;
+	//! Get current ctl floatingpoint value
+	/*!
+	  \param ctl The ctl key whose value should be retrieved.
+	  \return The associated ctl value.
+	  \sa openmpt::module::get_ctls
+	  \since 0.5.0
+	*/
+	double ctl_get_floatingpoint( std::string_view ctl ) const;
+	//! Get current ctl text value
+	/*!
+	  \param ctl The ctl key whose value should be retrieved.
+	  \return The associated ctl value.
+	  \sa openmpt::module::get_ctls
+	  \since 0.5.0
+	*/
+	std::string ctl_get_text( std::string_view ctl ) const;
+
 	//! Set ctl value
 	/*!
 	  \param ctl The ctl key whose value should be set.
 	  \param value The value that should be set.
 	  \throws openmpt::exception Throws an exception derived from openmpt::exception in case the value is not sensible (e.g. negative tempo factor) or under the circumstances outlined in openmpt::module::get_ctls.
 	  \sa openmpt::module::get_ctls
+	  \deprecated Please use openmpt::module::ctl_set_bool(), openmpt::module::ctl_set_int(), openmpt::module::ctl_set_floatingpoint(), or openmpt::module::ctl_set_string().
 	*/
-	void ctl_set( const std::string & ctl, const std::string & value );
+	LIBOPENMPT_ATTR_DEPRECATED void ctl_set( const std::string & ctl, const std::string & value );
+	//! Set ctl boolean value
+	/*!
+	  \param ctl The ctl key whose value should be set.
+	  \param value The value that should be set.
+	  \throws openmpt::exception Throws an exception derived from openmpt::exception in case the value is not sensible (e.g. negative tempo factor) or under the circumstances outlined in openmpt::module::get_ctls.
+	  \sa openmpt::module::get_ctls
+	  \since 0.5.0
+	*/
+	void ctl_set_boolean( std::string_view ctl, bool value );
+	//! Set ctl integer value
+	/*!
+	  \param ctl The ctl key whose value should be set.
+	  \param value The value that should be set.
+	  \throws openmpt::exception Throws an exception derived from openmpt::exception in case the value is not sensible (e.g. negative tempo factor) or under the circumstances outlined in openmpt::module::get_ctls.
+	  \sa openmpt::module::get_ctls
+	  \since 0.5.0
+	*/
+	void ctl_set_integer( std::string_view ctl, std::int64_t value );
+	//! Set ctl floatingpoint value
+	/*!
+	  \param ctl The ctl key whose value should be set.
+	  \param value The value that should be set.
+	  \throws openmpt::exception Throws an exception derived from openmpt::exception in case the value is not sensible (e.g. negative tempo factor) or under the circumstances outlined in openmpt::module::get_ctls.
+	  \sa openmpt::module::get_ctls
+	  \since 0.5.0
+	*/
+	void ctl_set_floatingpoint( std::string_view ctl, double value );
+	//! Set ctl text value
+	/*!
+	  \param ctl The ctl key whose value should be set.
+	  \param value The value that should be set.
+	  \throws openmpt::exception Throws an exception derived from openmpt::exception in case the value is not sensible (e.g. negative tempo factor) or under the circumstances outlined in openmpt::module::get_ctls.
+	  \sa openmpt::module::get_ctls
+	  \since 0.5.0
+	*/
+	void ctl_set_text( std::string_view ctl, std::string_view value );
 
 	// remember to add new functions to both C and C++ interfaces and to increase OPENMPT_API_VERSION_MINOR
 
 }; // class module
 
-} // namespace openmpt
-
 /*!
   @}
 */
+
+} // namespace openmpt
 
 #endif // LIBOPENMPT_HPP

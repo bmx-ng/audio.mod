@@ -10,14 +10,16 @@
 
 #pragma once
 
-#include "BuildSettings.h"
+#include "openmpt/all/BuildSettings.hpp"
+
+#include "Snd_defs.h"
 
 #include <algorithm>
 #include <vector>
-#include "Snd_defs.h"
 
 OPENMPT_NAMESPACE_BEGIN
 
+class CPattern;
 class CSoundFile;
 class ModSequenceSet;
 
@@ -26,9 +28,9 @@ class ModSequence: public std::vector<PATTERNINDEX>
 	friend class ModSequenceSet;
 
 protected:
-	std::string m_name;			// Sequence name.
-	CSoundFile &m_sndFile;		// Associated CSoundFile.
-	ORDERINDEX m_restartPos;	// Restart position when playback of this order ended
+	mpt::ustring m_name;          // Sequence name
+	CSoundFile &m_sndFile;        // Associated CSoundFile
+	ORDERINDEX m_restartPos = 0;  // Restart position when playback of this order ended
 
 public:
 	ModSequence(CSoundFile &sndFile);
@@ -77,12 +79,14 @@ public:
 	// Check if pattern at sequence position ord is valid.
 	bool IsValidPat(ORDERINDEX ord) const;
 
+	CPattern *PatternAt(ORDERINDEX ord) const;
+
 	void AdjustToNewModType(const MODTYPE oldtype);
 
 	// Returns the internal representation of a stop '---' index
-	static PATTERNINDEX GetInvalidPatIndex() { return uint16_max; }
+	static constexpr PATTERNINDEX GetInvalidPatIndex() { return uint16_max; }
 	// Returns the internal representation of an ignore '+++' index
-	static PATTERNINDEX GetIgnoreIndex() { return uint16_max - 1; }
+	static constexpr PATTERNINDEX GetIgnoreIndex() { return uint16_max - 1; }
 
 	// Returns the previous/next order ignoring skip indices (+++).
 	// If no previous/next order exists, return first/last order, and zero
@@ -113,24 +117,24 @@ public:
 #endif // MODPLUG_TRACKER
 
 	// Sequence name setter / getter
-	inline void SetName(const std::string &newName) { m_name = newName;}
-	inline std::string GetName() const { return m_name; }
+	inline void SetName(const mpt::ustring &newName) { m_name = newName;}
+	inline mpt::ustring GetName() const { return m_name; }
 
 	// Restart position setter / getter
-	inline void SetRestartPos(ORDERINDEX restartPos) { m_restartPos = restartPos; }
-	inline ORDERINDEX GetRestartPos() const { return m_restartPos; }
+	inline void SetRestartPos(ORDERINDEX restartPos) noexcept { m_restartPos = restartPos; }
+	inline ORDERINDEX GetRestartPos() const noexcept { return m_restartPos; }
 };
 
 
 class ModSequenceSet
 {
 	friend void ReadModSequenceOld(std::istream& iStrm, ModSequenceSet& seq, const size_t);
-	friend void ReadModSequences(std::istream& iStrm, ModSequenceSet& seq, const size_t);
+	friend void ReadModSequences(std::istream& iStrm, ModSequenceSet& seq, const size_t, mpt::Charset defaultCharset);
 
 protected:
-	std::vector<ModSequence> m_Sequences;	// Array of sequences.
+	std::vector<ModSequence> m_Sequences;  // Array of sequences
 	CSoundFile &m_sndFile;
-	SEQUENCEINDEX m_currentSeq;				// Index of current sequence.
+	SEQUENCEINDEX m_currentSeq = 0;  // Index of current sequence.
 
 public:
 	ModSequenceSet(CSoundFile &sndFile);
@@ -151,19 +155,22 @@ public:
 
 	// Sets working sequence.
 	void SetSequence(SEQUENCEINDEX);
-	// Add new sequence.
-	// If duplicate is true, new sequence is a duplicate of the current sequence.
+	// Add new empty sequence.
 	// Returns the ID of the new sequence, or SEQUENCEINDEX_INVALID on failure.
-	SEQUENCEINDEX AddSequence(bool duplicate = true);
+	SEQUENCEINDEX AddSequence();
 	// Removes given sequence.
 	void RemoveSequence(SEQUENCEINDEX);
 
 	// Returns the internal representation of a stop '---' index
-	static PATTERNINDEX GetInvalidPatIndex() { return ModSequence::GetInvalidPatIndex(); }
+	static constexpr PATTERNINDEX GetInvalidPatIndex() { return ModSequence::GetInvalidPatIndex(); }
 	// Returns the internal representation of an ignore '+++' index
-	static PATTERNINDEX GetIgnoreIndex() { return ModSequence::GetIgnoreIndex(); }
+	static constexpr PATTERNINDEX GetIgnoreIndex() { return ModSequence::GetIgnoreIndex(); }
 
 #ifdef MODPLUG_TRACKER
+	// Assigns a new set of sequences. The vector contents indicate which existing sequences to keep / duplicate or if a new sequences should be inserted (SEQUENCEINDEX_INVALID)
+	// The function fails if the vector is empty or contains too many sequences.
+	bool Rearrange(const std::vector<SEQUENCEINDEX> &newOrder);
+
 	// Adjust sequence when converting between module formats
 	void OnModTypeChanged(MODTYPE oldType);
 	// Check if there is a single sequences that qualifies for subsong splitting
@@ -196,12 +203,12 @@ const char FileIdSequence[] = "mptSeq";
 #ifndef MODPLUG_NO_FILESAVE
 void WriteModSequences(std::ostream& oStrm, const ModSequenceSet& seq);
 #endif // MODPLUG_NO_FILESAVE
-void ReadModSequences(std::istream& iStrm, ModSequenceSet& seq, const size_t nSize = 0);
+void ReadModSequences(std::istream& iStrm, ModSequenceSet& seq, const size_t nSize, mpt::Charset defaultCharset);
 
 #ifndef MODPLUG_NO_FILESAVE
 void WriteModSequence(std::ostream& oStrm, const ModSequence& seq);
 #endif // MODPLUG_NO_FILESAVE
-void ReadModSequence(std::istream& iStrm, ModSequence& seq, const size_t);
+void ReadModSequence(std::istream& iStrm, ModSequence& seq, const size_t, mpt::Charset defaultCharset);
 
 #ifndef MODPLUG_NO_FILESAVE
 void WriteModSequenceOld(std::ostream& oStrm, const ModSequenceSet& seq);

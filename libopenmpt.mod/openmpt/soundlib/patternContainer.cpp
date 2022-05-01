@@ -28,10 +28,7 @@ void CPatternContainer::ClearPatterns()
 
 void CPatternContainer::DestroyPatterns()
 {
-	for(PATTERNINDEX i = 0; i < m_Patterns.size(); i++)
-	{
-		Remove(i);
-	}
+	m_Patterns.clear();
 }
 
 
@@ -67,7 +64,7 @@ PATTERNINDEX CPatternContainer::InsertAny(const ROWINDEX rows, bool respectQtyLi
 
 bool CPatternContainer::Insert(const PATTERNINDEX index, const ROWINDEX rows)
 {
-	if(rows > MAX_PATTERN_ROWS || rows == 0)
+	if(rows > MAX_PATTERN_ROWS || rows == 0 || index >= PATTERNINDEX_INVALID)
 		return false;
 	if(IsValidPat(index))
 		return false;
@@ -81,9 +78,9 @@ bool CPatternContainer::Insert(const PATTERNINDEX index, const ROWINDEX rows)
 		m_Patterns[index].AllocatePattern(rows);
 		m_Patterns[index].RemoveSignature();
 		m_Patterns[index].SetName("");
-	} MPT_EXCEPTION_CATCH_OUT_OF_MEMORY(e)
+	} catch(mpt::out_of_memory e)
 	{
-		MPT_EXCEPTION_DELETE_OUT_OF_MEMORY(e);
+		mpt::delete_out_of_memory(e);
 		return false;
 	}
 	return m_Patterns[index].IsValid();
@@ -112,15 +109,7 @@ bool CPatternContainer::IsPatternEmpty(const PATTERNINDEX nPat) const
 
 void CPatternContainer::ResizeArray(const PATTERNINDEX newSize)
 {
-	if(Size() <= newSize)
-	{
-		m_Patterns.resize(newSize, CPattern(*this));
-	} else
-	{
-		for(PATTERNINDEX i = Size(); i > newSize; i--)
-			Remove(i - 1);
-		m_Patterns.resize(newSize, CPattern(*this));
-	}
+	m_Patterns.resize(newSize, CPattern(*this));
 }
 
 

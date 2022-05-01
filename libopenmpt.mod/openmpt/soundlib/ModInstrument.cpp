@@ -43,7 +43,7 @@ void InstrumentEnvelope::Convert(MODTYPE fromType, MODTYPE toType)
 		}
 
 		// XM -> IT / MPTM: Shorten loop by one tick by inserting bogus point
-		if(nLoopEnd > nLoopStart && dwFlags[ENV_LOOP])
+		if(nLoopEnd > nLoopStart && dwFlags[ENV_LOOP] && nLoopEnd < size())
 		{
 			if(at(nLoopEnd).tick - 1 > at(nLoopEnd - 1).tick)
 			{
@@ -106,7 +106,7 @@ int32 InstrumentEnvelope::GetValueFromPosition(int position, int32 rangeOut, int
 		{
 			// Linear approximation between the points;
 			// f(x + d) ~ f(x) + f'(x) * d, where f'(x) = (y2 - y1) / (x2 - x1)
-			value += ((position - x1) * (at(pt).value * ENV_PRECISION / rangeIn - value)) / (x2 - x1);
+			value += Util::muldiv(position - x1, (at(pt).value * ENV_PRECISION / rangeIn - value), x2 - x1);
 		}
 	}
 
@@ -138,38 +138,10 @@ void InstrumentEnvelope::Sanitize(uint8 maxValue)
 
 ModInstrument::ModInstrument(SAMPLEINDEX sample)
 {
-	nFadeOut = 256;
-	dwFlags.reset();
-	nGlobalVol = 64;
-	nPan = 32 * 4;
-
-	nNNA = NNA_NOTECUT;
-	nDCT = DCT_NONE;
-	nDNA = DNA_NOTECUT;
-
-	nPanSwing = 0;
-	nVolSwing = 0;
 	SetCutoff(0, false);
 	SetResonance(0, false);
 
-	wMidiBank = 0;
-	nMidiProgram = 0;
-	nMidiChannel = 0;
-	nMidiDrumKey = 0;
-	midiPWD = 2;
-
-	nPPC = NOTE_MIDDLEC - 1;
-	nPPS = 0;
-
-	nMixPlug = 0;
-	nVolRampUp = 0;
-	resampling = SRCMODE_DEFAULT;
-	nCutSwing = 0;
-	nResSwing = 0;
-	nFilterMode = FLTMODE_UNCHANGED;
 	pitchToTempoLock.Set(0);
-	pluginVelocityHandling = PLUGIN_VELOCITYHANDLING_CHANNEL;
-	pluginVolumeHandling = PLUGIN_VOLUMEHANDLING_IGNORE;
 
 	pTuning = CSoundFile::GetDefaultTuning();
 
@@ -192,20 +164,20 @@ void ModInstrument::Convert(MODTYPE fromType, MODTYPE toType)
 		dwFlags.reset(INS_SETPANNING);
 		SetCutoff(GetCutoff(), false);
 		SetResonance(GetResonance(), false);
-		nFilterMode = FLTMODE_UNCHANGED;
+		filterMode = FilterMode::Unchanged;
 
 		nCutSwing = nPanSwing = nResSwing = nVolSwing = 0;
 
 		nPPC = NOTE_MIDDLEC - 1;
 		nPPS = 0;
 
-		nNNA = NNA_NOTECUT;
-		nDCT = DCT_NONE;
-		nDNA = DNA_NOTECUT;
+		nNNA = NewNoteAction::NoteCut;
+		nDCT = DuplicateCheckType::None;
+		nDNA = DuplicateNoteAction::NoteCut;
 
 		if(nMidiChannel == MidiMappedChannel)
 		{
-			nMidiChannel = 1;
+			nMidiChannel = MidiFirstChannel;
 		}
 
 		// FT2 only has unsigned Pitch Wheel Depth, and it's limited to 0...36 (in the GUI, at least. As you would expect it from FT2, this value is actually not sanitized on load).
@@ -250,7 +222,7 @@ void ModInstrument::Convert(MODTYPE fromType, MODTYPE toType)
 		SetTuning(nullptr);
 		pitchToTempoLock.Set(0);
 		nCutSwing = nResSwing = 0;
-		nFilterMode = FLTMODE_UNCHANGED;
+		filterMode = FilterMode::Unchanged;
 		nVolRampUp = 0;
 	}
 }
@@ -297,9 +269,9 @@ void ModInstrument::Sanitize(MODTYPE modType)
 	LimitMax(nMidiProgram, uint8(128));
 	LimitMax(nMidiChannel, uint8(17));
 
-	if(nNNA > NNA_NOTEFADE) nNNA = NNA_NOTECUT;
-	if(nDCT > DCT_PLUGIN) nDCT = DCT_NONE;
-	if(nDNA > DNA_NOTEFADE) nDNA = DNA_NOTECUT;
+	if(nNNA > NewNoteAction::NoteFade) nNNA = NewNoteAction::NoteCut;
+	if(nDCT > DuplicateCheckType::Plugin) nDCT = DuplicateCheckType::None;
+	if(nDNA > DuplicateNoteAction::NoteFade) nDNA = DuplicateNoteAction::NoteCut;
 
 	LimitMax(nPanSwing, uint8(64));
 	LimitMax(nVolSwing, uint8(100));
@@ -319,7 +291,7 @@ void ModInstrument::Sanitize(MODTYPE modType)
 	PanEnv.Sanitize();
 	PitchEnv.Sanitize(range);
 
-	for(size_t i = 0; i < CountOf(NoteMap); i++)
+	for(size_t i = 0; i < std::size(NoteMap); i++)
 	{
 		if(NoteMap[i] < NOTE_MIN || NoteMap[i] > NOTE_MAX)
 			NoteMap[i] = static_cast<uint8>(i + NOTE_MIN);
@@ -327,6 +299,31 @@ void ModInstrument::Sanitize(MODTYPE modType)
 
 	if(!Resampling::IsKnownMode(resampling))
 		resampling = SRCMODE_DEFAULT;
+
+	if(nMixPlug > MAX_MIXPLUGINS)
+		nMixPlug = 0;
+}
+
+
+void ModInstrument::Transpose(int8 amount)
+{
+	for(auto &note : NoteMap)
+	{
+		note = static_cast<uint8>(Clamp(note + amount, NOTE_MIN, NOTE_MAX));
+	}
+}
+
+
+uint8 ModInstrument::GetMIDIChannel(const ModChannel &channel, CHANNELINDEX chn) const
+{
+	// For mapped channels, return their pattern channel, modulo 16 (because there are only 16 MIDI channels)
+	if(nMidiChannel == MidiMappedChannel)
+		return static_cast<uint8>((channel.nMasterChn ? (channel.nMasterChn - 1u) : chn) % 16u);
+	else if(HasValidMIDIChannel())
+		return (nMidiChannel - MidiFirstChannel) % 16u;
+	else
+		return 0;
+
 }
 
 

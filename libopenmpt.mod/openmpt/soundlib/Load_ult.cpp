@@ -49,6 +49,7 @@ struct UltSample
 	void ConvertToMPT(ModSample &mptSmp) const
 	{
 		mptSmp.Initialize();
+		mptSmp.Set16BitCuePoints();
 
 		mptSmp.filename = mpt::String::ReadBuf(mpt::String::maybeNullTerminated, filename);
 
@@ -97,7 +98,7 @@ convert them. */
 static void TranslateULTCommands(uint8 &effect, uint8 &param, uint8 version)
 {
 
-	static const uint8 ultEffTrans[] =
+	static constexpr uint8 ultEffTrans[] =
 	{
 		CMD_ARPEGGIO,
 		CMD_PORTAMENTOUP,
@@ -225,17 +226,39 @@ static int ReadULTEvent(ModCommand &m, FileReader &file, uint8 version)
 	// sample offset -- this is even more special than digitrakker's
 	if(cmd1 == CMD_OFFSET && cmd2 == CMD_OFFSET)
 	{
-		uint32 off = ((param1 << 8) | param2) >> 6;
-		cmd1 = CMD_NONE;
-		param1 = mpt::saturate_cast<uint8>(off);
+		uint32 offset = ((param2 << 8) | param1) >> 6;
+		m.command = CMD_OFFSET;
+		m.param = static_cast<ModCommand::PARAM>(offset);
+		if(offset > 0xFF)
+		{
+			m.volcmd = VOLCMD_OFFSET;
+			m.vol = static_cast<ModCommand::VOL>(offset >> 8);
+		}
+		return repeat;
 	} else if(cmd1 == CMD_OFFSET)
 	{
-		uint32 off = param1 * 4;
-		param1 = mpt::saturate_cast<uint8>(off);
+		uint32 offset = param1 * 4;
+		param1 = mpt::saturate_cast<uint8>(offset);
+		if(offset > 0xFF && ModCommand::GetEffectWeight(cmd2) < ModCommand::GetEffectType(CMD_OFFSET))
+		{
+			m.command = CMD_OFFSET;
+			m.param = static_cast<ModCommand::PARAM>(offset);
+			m.volcmd = VOLCMD_OFFSET;
+			m.vol = static_cast<ModCommand::VOL>(offset >> 8);
+			return repeat;
+		}
 	} else if(cmd2 == CMD_OFFSET)
 	{
-		uint32 off = param2 * 4;
-		param2 = mpt::saturate_cast<uint8>(off);
+		uint32 offset = param2 * 4;
+		param2 = mpt::saturate_cast<uint8>(offset);
+		if(offset > 0xFF && ModCommand::GetEffectWeight(cmd1) < ModCommand::GetEffectType(CMD_OFFSET))
+		{
+			m.command = CMD_OFFSET;
+			m.param = static_cast<ModCommand::PARAM>(offset);
+			m.volcmd = VOLCMD_OFFSET;
+			m.vol = static_cast<ModCommand::VOL>(offset >> 8);
+			return repeat;
+		}
 	} else if(cmd1 == cmd2)
 	{
 		// don't try to figure out how ultratracker does this, it's quite random
@@ -393,13 +416,14 @@ bool CSoundFile::ReadULT(FileReader &file, ModLoadingFlags loadFlags)
 	m_modFormat.madeWithTracker = U_("UltraTracker ") + versions[fileHeader.version - '1'];
 	m_modFormat.charset = mpt::Charset::CP437;
 
-	m_SongFlags = SONG_ITCOMPATGXX | SONG_ITOLDEFFECTS;	// this will be converted to IT format by MPT.
+	m_SongFlags = SONG_ITCOMPATGXX | SONG_ITOLDEFFECTS;  // this will be converted to IT format by MPT.
 
-	// read "messageLength" lines, each containing 32 characters.
+	// Read "messageLength" lines, each containing 32 characters.
 	m_songMessage.ReadFixedLineLength(file, fileHeader.messageLength * 32, 32, 0);
 
-	m_nSamples = static_cast<SAMPLEINDEX>(file.ReadUint8());
-	if(GetNumSamples() >= MAX_SAMPLES)
+	if(SAMPLEINDEX numSamples = file.ReadUint8(); numSamples < MAX_SAMPLES)
+		m_nSamples = numSamples;
+	else
 		return false;
 
 	for(SAMPLEINDEX smp = 1; smp <= GetNumSamples(); smp++)
@@ -423,11 +447,12 @@ bool CSoundFile::ReadULT(FileReader &file, ModLoadingFlags loadFlags)
 
 	ReadOrderFromFile<uint8>(Order(), file, 256, 0xFF, 0xFE);
 
-	m_nChannels = file.ReadUint8() + 1;
-	PATTERNINDEX numPats = file.ReadUint8() + 1;
-
-	if(GetNumChannels() > MAX_BASECHANNELS)
+	if(CHANNELINDEX numChannels = file.ReadUint8() + 1u; numChannels <= MAX_BASECHANNELS)
+		m_nChannels = numChannels;
+	else
 		return false;
+
+	PATTERNINDEX numPats = file.ReadUint8() + 1;
 
 	for(CHANNELINDEX chn = 0; chn < GetNumChannels(); chn++)
 	{

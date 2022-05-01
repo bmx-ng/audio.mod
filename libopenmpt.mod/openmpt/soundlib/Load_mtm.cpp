@@ -140,7 +140,7 @@ bool CSoundFile::ReadMTM(FileReader &file, ModLoadingFlags loadFlags)
 	
 	m_modFormat.formatName = U_("MultiTracker");
 	m_modFormat.type = U_("mtm");
-	m_modFormat.madeWithTracker = mpt::format(U_("MultiTracker %1.%2"))(fileHeader.version >> 4, fileHeader.version & 0x0F);
+	m_modFormat.madeWithTracker = MPT_UFORMAT("MultiTracker {}.{}")(fileHeader.version >> 4, fileHeader.version & 0x0F);
 	m_modFormat.charset = mpt::Charset::CP437;
 
 	// Reading instruments
@@ -174,7 +174,8 @@ bool CSoundFile::ReadMTM(FileReader &file, ModLoadingFlags loadFlags)
 	{
 		if(!(loadFlags & loadPatternData) || !Patterns.Insert(pat, rowsPerPat))
 		{
-			break;
+			file.Skip(64);
+			continue;
 		}
 
 		for(CHANNELINDEX chn = 0; chn < 32; chn++)

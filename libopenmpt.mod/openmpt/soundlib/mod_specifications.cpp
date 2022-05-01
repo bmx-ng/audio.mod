@@ -19,12 +19,7 @@ namespace ModSpecs
 {
 
 
-// Force built-in integer operations.
-// C++11 constexpr operations on the enum value_type would also solve this.
-#define SongFlag(x) (FlagSet<SongFlags>::store_type(0) | x)
-
-
-MPT_CONSTEXPR11_VAR CModSpecifications mptm_ =
+constexpr CModSpecifications mptm_ =
 {
 	/*
 	TODO: Proper, less arbitrarily chosen values here.
@@ -41,7 +36,7 @@ MPT_CONSTEXPR11_VAR CModSpecifications mptm_ =
 	1,											// Channel min
 	127,										// Channel max
 	32,											// Min tempo
-	512,										// Max tempo
+	1000,										// Max tempo
 	1,											// Min Speed
 	255,										// Max Speed
 	1,											// Min pattern rows
@@ -54,8 +49,8 @@ MPT_CONSTEXPR11_VAR CModSpecifications mptm_ =
 	0,											// Max comment line length
 	3999,										// SamplesMax
 	255,										// instrumentMax
-	mixLevels1_17RC3,							// defaultMixLevels
-	SongFlag(SONG_LINEARSLIDES | SONG_EXFILTERRANGE | SONG_ITOLDEFFECTS | SONG_ITCOMPATGXX),	// Supported song flags
+	MixLevels::v1_17RC3,						// defaultMixLevels
+	SONG_LINEARSLIDES | SONG_EXFILTERRANGE | SONG_ITOLDEFFECTS | SONG_ITCOMPATGXX,	// Supported song flags
 	200,										// Max MIDI mapping directives
 	MAX_ENVPOINTS,								// Envelope point count
 	true,										// Has notecut.
@@ -72,14 +67,14 @@ MPT_CONSTEXPR11_VAR CModSpecifications mptm_ =
 	true,										// Has artist name
 	true,										// Has default resampling
 	true,										// Fixed point tempo
-	" JFEGHLKRXODB?CQATI?SMNVW?UY?P?Z\\:#????????",	// Supported Effects
+	" JFEGHLKRXODB?CQATI?SMNVW?UY?P?Z\\:#+*?????????",	// Supported Effects
 	" vpcdabuh??gfe?o",							// Supported Volume Column commands
 };
 
 
 
 
-MPT_CONSTEXPR11_VAR CModSpecifications mod_ =
+constexpr CModSpecifications mod_ =
 {
 	MOD_TYPE_MOD,								// Internal MODTYPE value
 	"mod",										// File extension
@@ -104,8 +99,8 @@ MPT_CONSTEXPR11_VAR CModSpecifications mod_ =
 	0,											// Max comment line length
 	31,											// SamplesMax
 	0,											// instrumentMax
-	mixLevelsCompatible,						// defaultMixLevels
-	SongFlag(SONG_PT_MODE | SONG_AMIGALIMITS | SONG_ISAMIGA),	// Supported song flags
+	MixLevels::Compatible,						// defaultMixLevels
+	SONG_PT_MODE | SONG_AMIGALIMITS | SONG_ISAMIGA,	// Supported song flags
 	0,											// Max MIDI mapping directives
 	0,											// No instrument envelopes
 	false,										// No notecut.
@@ -122,12 +117,12 @@ MPT_CONSTEXPR11_VAR CModSpecifications mod_ =
 	false,										// Doesn't have artist name
 	false,										// Doesn't have default resampling
 	false,										// Integer tempo
-	" 0123456789ABCD?FF?E???????????????????????",	// Supported Effects
+	" 0123456789ABCD?FF?E??????????????????????????",	// Supported Effects
 	" ???????????????",							// Supported Volume Column commands
 };
 
 
-MPT_CONSTEXPR11_VAR CModSpecifications xm_ =
+constexpr CModSpecifications xm_ =
 {
 	MOD_TYPE_XM,								// Internal MODTYPE value
 	"xm",										// File extension
@@ -139,7 +134,7 @@ MPT_CONSTEXPR11_VAR CModSpecifications xm_ =
 	1,											// Channel min
 	32,											// Channel max
 	32,											// Min tempo
-	512,										// Max tempo
+	1000,										// Max tempo
 	1,											// Min Speed
 	31,											// Max Speed
 	1,											// Min pattern rows
@@ -152,8 +147,8 @@ MPT_CONSTEXPR11_VAR CModSpecifications xm_ =
 	0,											// Max comment line length
 	128 * 16,									// SamplesMax (actually 16 per instrument)
 	128,										// instrumentMax
-	mixLevelsCompatibleFT2,						// defaultMixLevels
-	SongFlag(SONG_LINEARSLIDES),				// Supported song flags
+	MixLevels::CompatibleFT2,					// defaultMixLevels
+	SONG_LINEARSLIDES,							// Supported song flags
 	0,											// Max MIDI mapping directives
 	12,											// Envelope point count
 	false,										// No notecut.
@@ -170,12 +165,12 @@ MPT_CONSTEXPR11_VAR CModSpecifications xm_ =
 	false,										// Doesn't have artist name
 	false,										// Doesn't have default resampling
 	false,										// Integer tempo
-	" 0123456789ABCDRFFTE???GHK??XPL????????????",	// Supported Effects
+	" 0123456789ABCDRFFTE???GHK??XPL??????W????????",	// Supported Effects
 	" vpcdabuhlrg????",							// Supported Volume Column commands
 };
 
 // XM with MPT extensions
-MPT_CONSTEXPR11_VAR CModSpecifications xmEx_ =
+constexpr CModSpecifications xmEx_ =
 {
 	MOD_TYPE_XM,								// Internal MODTYPE value
 	"xm",										// File extension
@@ -187,7 +182,7 @@ MPT_CONSTEXPR11_VAR CModSpecifications xmEx_ =
 	1,											// Channel min
 	127,										// Channel max
 	32,											// Min tempo
-	512,										// Max tempo
+	1000,										// Max tempo
 	1,											// Min Speed
 	31,											// Max Speed
 	1,											// Min pattern rows
@@ -200,8 +195,8 @@ MPT_CONSTEXPR11_VAR CModSpecifications xmEx_ =
 	0,											// Max comment line length
 	MAX_SAMPLES - 1,							// SamplesMax (actually 32 per instrument(256 * 32 = 8192), but limited to MAX_SAMPLES = 4000)
 	255,										// instrumentMax
-	mixLevelsCompatibleFT2,						// defaultMixLevels
-	SongFlag(SONG_LINEARSLIDES | SONG_EXFILTERRANGE),	// Supported song flags
+	MixLevels::CompatibleFT2,					// defaultMixLevels
+	SONG_LINEARSLIDES | SONG_EXFILTERRANGE,		// Supported song flags
 	200,										// Max MIDI mapping directives
 	12,											// Envelope point count
 	false,										// No notecut.
@@ -218,11 +213,11 @@ MPT_CONSTEXPR11_VAR CModSpecifications xmEx_ =
 	true,										// Has artist name
 	false,										// Doesn't have default resampling
 	false,										// Integer tempo
-	" 0123456789ABCDRFFTE???GHK?YXPLZ\\?#????????",	// Supported Effects
+	" 0123456789ABCDRFFTE???GHK?YXPLZ\\?#??W????????",	// Supported Effects
 	" vpcdabuhlrg????",							// Supported Volume Column commands
 };
 
-MPT_CONSTEXPR11_VAR CModSpecifications s3m_ =
+constexpr CModSpecifications s3m_ =
 {
 	MOD_TYPE_S3M,								// Internal MODTYPE value
 	"s3m",										// File extension
@@ -247,8 +242,8 @@ MPT_CONSTEXPR11_VAR CModSpecifications s3m_ =
 	0,											// Max comment line length
 	99,											// SamplesMax
 	0,											// instrumentMax
-	mixLevelsCompatible,						// defaultMixLevels
-	SongFlag(SONG_FASTVOLSLIDES | SONG_AMIGALIMITS | SONG_S3MOLDVIBRATO),	// Supported song flags
+	MixLevels::Compatible,						// defaultMixLevels
+	SONG_FASTVOLSLIDES | SONG_AMIGALIMITS | SONG_S3MOLDVIBRATO,	// Supported song flags
 	0,											// Max MIDI mapping directives
 	0,											// No instrument envelopes
 	true,										// Has notecut.
@@ -265,12 +260,12 @@ MPT_CONSTEXPR11_VAR CModSpecifications s3m_ =
 	false,										// Doesn't have artist name
 	false,										// Doesn't have default resampling
 	false,										// Integer tempo
-	" JFEGHLKRXODB?CQATI?SMNVW?U??????????????? ",	// Supported Effects
+	" JFEGHLKRXODB?CQATI?SMNVW?U?????????? ????????",	// Supported Effects
 	" vp?????????????",							// Supported Volume Column commands
 };
 
 // S3M with MPT extensions
-MPT_CONSTEXPR11_VAR CModSpecifications s3mEx_ =
+constexpr CModSpecifications s3mEx_ =
 {
 	MOD_TYPE_S3M,								// Internal MODTYPE value
 	"s3m",										// File extension
@@ -295,8 +290,8 @@ MPT_CONSTEXPR11_VAR CModSpecifications s3mEx_ =
 	0,											// Max comment line length
 	99,											// SamplesMax
 	0,											// instrumentMax
-	mixLevelsCompatible,						// defaultMixLevels
-	SongFlag(SONG_FASTVOLSLIDES | SONG_AMIGALIMITS),	// Supported song flags
+	MixLevels::Compatible,						// defaultMixLevels
+	SONG_FASTVOLSLIDES | SONG_AMIGALIMITS,		// Supported song flags
 	0,											// Max MIDI mapping directives
 	0,											// No instrument envelopes
 	true,										// Has notecut.
@@ -313,11 +308,11 @@ MPT_CONSTEXPR11_VAR CModSpecifications s3mEx_ =
 	false,										// Doesn't have artist name
 	false,										// Doesn't have default resampling
 	false,										// Integer tempo
-	" JFEGHLKRXODB?CQATI?SMNVW?UY?P?Z?????????? ",	// Supported Effects
+	" JFEGHLKRXODB?CQATI?SMNVW?UY?P?Z????? ????????",	// Supported Effects
 	" vp?????????????",							// Supported Volume Column commands
 };
 
-MPT_CONSTEXPR11_VAR CModSpecifications it_ =
+constexpr CModSpecifications it_ =
 {
 	MOD_TYPE_IT,								// Internal MODTYPE value
 	"it",										// File extension
@@ -342,8 +337,8 @@ MPT_CONSTEXPR11_VAR CModSpecifications it_ =
 	75,											// Max comment line length
 	99,											// SamplesMax
 	99,											// instrumentMax
-	mixLevelsCompatible,						// defaultMixLevels
-	SongFlag(SONG_LINEARSLIDES | SONG_ITOLDEFFECTS | SONG_ITCOMPATGXX),	// Supported song flags
+	MixLevels::Compatible,						// defaultMixLevels
+	SONG_LINEARSLIDES | SONG_ITOLDEFFECTS | SONG_ITCOMPATGXX,	// Supported song flags
 	0,											// Max MIDI mapping directives
 	25,											// Envelope point count
 	true,										// Has notecut.
@@ -360,11 +355,11 @@ MPT_CONSTEXPR11_VAR CModSpecifications it_ =
 	false,										// Doesn't have artist name
 	false,										// Doesn't have default resampling
 	false,										// Integer tempo
-	" JFEGHLKRXODB?CQATI?SMNVW?UY?P?Z?????????? ",	// Supported Effects
+	" JFEGHLKRXODB?CQATI?SMNVW?UY?P?Z????? ????????",	// Supported Effects
 	" vpcdab?h??gfe??",							// Supported Volume Column commands
 };
 
-MPT_CONSTEXPR11_VAR CModSpecifications itEx_ =
+constexpr CModSpecifications itEx_ =
 {
 	MOD_TYPE_IT,								// Internal MODTYPE value
 	"it",										// File extension
@@ -389,8 +384,8 @@ MPT_CONSTEXPR11_VAR CModSpecifications itEx_ =
 	75,											// Max comment line length
 	3999,										// SamplesMax
 	255,										// instrumentMax
-	mixLevelsCompatible,						// defaultMixLevels
-	SongFlag(SONG_LINEARSLIDES | SONG_EXFILTERRANGE | SONG_ITOLDEFFECTS | SONG_ITCOMPATGXX),	// Supported song flags
+	MixLevels::Compatible,						// defaultMixLevels
+	SONG_LINEARSLIDES | SONG_EXFILTERRANGE | SONG_ITOLDEFFECTS | SONG_ITCOMPATGXX,	// Supported song flags
 	200,										// Max MIDI mapping directives
 	25,											// Envelope point count
 	true,										// Has notecut.
@@ -407,31 +402,30 @@ MPT_CONSTEXPR11_VAR CModSpecifications itEx_ =
 	true,										// Has artist name
 	false,										// Doesn't have default resampling
 	false,										// Integer tempo
-	" JFEGHLKRXODB?CQATI?SMNVW?UY?P?Z\\?#??????? ",	// Supported Effects
+	" JFEGHLKRXODB?CQATI?SMNVW?UY?P?Z\\?#?? ????????",	// Supported Effects
 	" vpcdab?h??gfe??",							// Supported Volume Column commands
 };
 
-const CModSpecifications *Collection[8] = { &mptm_, &mod_, &s3m_, &s3mEx_, &xm_, &xmEx_, &it_, &itEx_ };
+const std::array<const CModSpecifications *, 8> Collection = { &mptm_, &mod_, &s3m_, &s3mEx_, &xm_, &xmEx_, &it_, &itEx_ };
 
-const CModSpecifications & mptm = mptm_;
-const CModSpecifications & mod = mod_;
-const CModSpecifications & s3m = s3m_;
-const CModSpecifications & s3mEx = s3mEx_;
-const CModSpecifications & xm = xm_;
-const CModSpecifications & xmEx = xmEx_;
-const CModSpecifications & it = it_;
-const CModSpecifications & itEx = itEx_;
+const CModSpecifications &mptm = mptm_;
+const CModSpecifications &mod = mod_;
+const CModSpecifications &s3m = s3m_;
+const CModSpecifications &s3mEx = s3mEx_;
+const CModSpecifications &xm = xm_;
+const CModSpecifications &xmEx = xmEx_;
+const CModSpecifications &it = it_;
+const CModSpecifications &itEx = itEx_;
 
 } // namespace ModSpecs
 
 
 MODTYPE CModSpecifications::ExtensionToType(std::string ext)
 {
-	if(ext == "")
+	if(ext.empty())
 	{
 		return MOD_TYPE_NONE;
-	}
-	if(ext.length() > 0 && ext[0] == '.')
+	} else if(ext[0] == '.')
 	{
 		ext.erase(0, 1);
 	}

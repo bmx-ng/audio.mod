@@ -122,7 +122,7 @@ void WavesReverb::Process(float *pOutL, float *pOutR, uint32 numFrames)
 
 PlugParamValue WavesReverb::GetParameter(PlugParamIndex index)
 {
-	if(index < kDistNumParameters)
+	if(index < kRvbNumParameters)
 	{
 		return m_param[index];
 	}
@@ -132,9 +132,9 @@ PlugParamValue WavesReverb::GetParameter(PlugParamIndex index)
 
 void WavesReverb::SetParameter(PlugParamIndex index, PlugParamValue value)
 {
-	if(index < kDistNumParameters)
+	if(index < kRvbNumParameters)
 	{
-		Limit(value, 0.0f, 1.0f);
+		value = mpt::safe_clamp(value, 0.0f, 1.0f);
 		m_param[index] = value;
 		RecalculateWavesReverbParams();
 	}

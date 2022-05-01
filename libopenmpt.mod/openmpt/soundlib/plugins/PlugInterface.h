@@ -10,7 +10,7 @@
 
 #pragma once
 
-#include "BuildSettings.h"
+#include "openmpt/all/BuildSettings.hpp"
 
 #ifndef NO_PLUGINS
 
@@ -25,6 +25,7 @@ OPENMPT_NAMESPACE_BEGIN
 struct VSTPluginLib;
 struct SNDMIXPLUGIN;
 struct ModInstrument;
+struct ModChannel;
 class CSoundFile;
 class CModDoc;
 class CAbstractVstEditor;
@@ -108,7 +109,7 @@ public:
 	// Returns the next instance of the same plugin
 	inline IMixPlugin *GetNextInstance() const { return m_pNext; }
 
-	void SetDryRatio(uint32 param);
+	void SetDryRatio(float dryRatio);
 	bool IsBypassed() const;
 	void RecalculateGain();
 	// Query output latency from host (in seconds)
@@ -143,11 +144,12 @@ public:
 	virtual bool MidiSend(uint32 /*midiCode*/) { return true; }
 	virtual bool MidiSysexSend(mpt::const_byte_span /*sysex*/) { return true; }
 	virtual void MidiCC(MIDIEvents::MidiCC /*nController*/, uint8 /*nParam*/, CHANNELINDEX /*trackChannel*/) { }
+	virtual void MidiPitchBendRaw(int32 /*pitchbend*/, CHANNELINDEX /*trackChannel*/) {}
 	virtual void MidiPitchBend(int32 /*increment*/, int8 /*pwd*/, CHANNELINDEX /*trackChannel*/) { }
 	virtual void MidiVibrato(int32 /*depth*/, int8 /*pwd*/, CHANNELINDEX /*trackerChn*/) { }
 	virtual void MidiCommand(const ModInstrument &/*instr*/, uint16 /*note*/, uint16 /*vol*/, CHANNELINDEX /*trackChannel*/) { }
 	virtual void HardAllNotesOff() { }
-	virtual bool IsNotePlaying(uint32 /*note*/, CHANNELINDEX /*trackerChn*/) { return false; }
+	virtual bool IsNotePlaying(uint8 /*note*/, CHANNELINDEX /*trackerChn*/) { return false; }
 
 	// Modify parameter by given amount. Only needs to be re-implemented if plugin architecture allows this to be performed atomically.
 	virtual void ModifyParameter(PlugParamIndex nIndex, PlugParamValue diff);
@@ -180,6 +182,12 @@ public:
 	// Cache a range of names, in case one-by-one retrieval would be slow (e.g. when using plugin bridge)
 	virtual void CacheProgramNames(int32 /*firstProg*/, int32 /*lastProg*/) { }
 	virtual void CacheParameterNames(int32 /*firstParam*/, int32 /*lastParam*/) { }
+
+	// Allowed value range for a parameter
+	virtual std::pair<PlugParamValue, PlugParamValue> GetParamUIRange(PlugParamIndex /*param*/) { return {0.0f, 1.0f}; }
+	// Scale allowed value range of a parameter to/from [0,1]
+	PlugParamValue GetScaledUIParam(PlugParamIndex param);
+	void SetScaledUIParam(PlugParamIndex param, PlugParamValue value);
 
 	virtual CString GetParamName(PlugParamIndex param) = 0;
 	virtual CString GetParamLabel(PlugParamIndex param) = 0;
@@ -240,48 +248,51 @@ protected:
 	enum
 	{
 		// Pitch wheel constants
-		vstPitchBendShift	= 12,		// Use lowest 12 bits for fractional part and vibrato flag => 16.11 fixed point precision
-		vstPitchBendMask	= (~1),
-		vstVibratoFlag		= 1,
+		kPitchBendShift = 12,  // Use lowest 12 bits for fractional part and vibrato flag => 16.11 fixed point precision
+		kPitchBendMask  = (~1),
+		kVibratoFlag    = 1,
 	};
 
 	struct PlugInstrChannel
 	{
-		int32  midiPitchBendPos;		// Current Pitch Wheel position, in 16.11 fixed point format. Lowest bit is used for indicating that vibrato was applied. Vibrato offset itself is not stored in this value.
-		uint16 currentProgram;
-		uint16 currentBank;
+		int32 midiPitchBendPos = 0;  // Current Pitch Wheel position, in 16.11 fixed point format. Lowest bit is used for indicating that vibrato was applied. Vibrato offset itself is not stored in this value.
+		uint16 currentProgram = uint16_max;
+		uint16 currentBank = uint16_max;
 		uint8  noteOnMap[128][MAX_CHANNELS];
 
-		void ResetProgram() { currentProgram = 0; currentBank = 0; }
+		void ResetProgram() { currentProgram = uint16_max; currentBank = uint16_max; }
 	};
 
-	std::array<PlugInstrChannel, 16> m_MidiCh;	// MIDI channel state
+	std::array<PlugInstrChannel, 16> m_MidiCh;  // MIDI channel state
 
 public:
 	IMidiPlugin(VSTPluginLib &factory, CSoundFile &sndFile, SNDMIXPLUGIN *mixStruct);
 
 	void MidiCC(MIDIEvents::MidiCC nController, uint8 nParam, CHANNELINDEX trackChannel) override;
+	void MidiPitchBendRaw(int32 pitchbend, CHANNELINDEX trackerChn) override;
 	void MidiPitchBend(int32 increment, int8 pwd, CHANNELINDEX trackerChn) override;
 	void MidiVibrato(int32 depth, int8 pwd, CHANNELINDEX trackerChn) override;
 	void MidiCommand(const ModInstrument &instr, uint16 note, uint16 vol, CHANNELINDEX trackChannel) override;
-	bool IsNotePlaying(uint32 note, CHANNELINDEX trackerChn) override;
+	bool IsNotePlaying(uint8 note, CHANNELINDEX trackerChn) override;
+
+	// Get the MIDI channel currently associated with a given tracker channel
+	virtual uint8 GetMidiChannel(const ModChannel &chn, CHANNELINDEX trackChannel) const;
 
 protected:
+	uint8 GetMidiChannel(CHANNELINDEX trackChannel) const;
+
 	// Plugin wants to send MIDI to OpenMPT
 	virtual void ReceiveMidi(uint32 midiCode);
 	virtual void ReceiveSysex(mpt::const_byte_span sysex);
 
-	// Get the MIDI channel currently associated with a given tracker channel
-	virtual uint8 GetMidiChannel(CHANNELINDEX trackChannel) const;
-
 	// Converts a 14-bit MIDI pitch bend position to our internal pitch bend position representation
-	static constexpr int32 EncodePitchBendParam(int32 position) { return (position << vstPitchBendShift); }
+	static constexpr int32 EncodePitchBendParam(int32 position) { return (position << kPitchBendShift); }
 	// Converts the internal pitch bend position to a 14-bit MIDI pitch bend position
-	static constexpr int16 DecodePitchBendParam(int32 position) { return static_cast<int16>(position >> vstPitchBendShift); }
+	static constexpr int16 DecodePitchBendParam(int32 position) { return static_cast<int16>(position >> kPitchBendShift); }
 	// Apply Pitch Wheel Depth (PWD) to some MIDI pitch bend value.
 	static inline void ApplyPitchWheelDepth(int32 &value, int8 pwd);
 
-	void MidiPitchBend(uint8 nMidiCh, int32 pitchBendPos);
+	void SendMidiPitchBend(uint8 midiCh, int32 newPitchBendPos);
 };
 
 OPENMPT_NAMESPACE_END

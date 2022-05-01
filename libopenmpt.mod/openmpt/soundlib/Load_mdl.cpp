@@ -10,7 +10,6 @@
 
 #include "stdafx.h"
 #include "Loaders.h"
-#include "ChunkReader.h"
 
 OPENMPT_NAMESPACE_BEGIN
 
@@ -154,9 +153,9 @@ enum
 };
 
 
-static const VibratoType MDLVibratoType[] = { VIB_SINE, VIB_RAMP_DOWN, VIB_SQUARE, VIB_SINE };
+static constexpr VibratoType MDLVibratoType[] = { VIB_SINE, VIB_RAMP_DOWN, VIB_SQUARE, VIB_SINE };
 
-static const ModCommand::COMMAND MDLEffTrans[] =
+static constexpr ModCommand::COMMAND MDLEffTrans[] =
 {
 	/* 0 */ CMD_NONE,
 	/* 1st column only */
@@ -189,7 +188,7 @@ static const ModCommand::COMMAND MDLEffTrans[] =
 // receive an MDL effect, give back a 'normal' one.
 static void ConvertMDLCommand(uint8 &cmd, uint8 &param)
 {
-	if(cmd >= CountOf(MDLEffTrans))
+	if(cmd >= std::size(MDLEffTrans))
 		return;
 
 	uint8 origCmd = cmd;
@@ -218,7 +217,6 @@ static void ConvertMDLCommand(uint8 &cmd, uint8 &param)
 		{
 		case 0x0: // unused
 		case 0x3: // unused
-		case 0x5: // Set Finetune
 		case 0x8: // Set Samplestatus (loop type)
 			cmd = CMD_NONE;
 			break;
@@ -232,6 +230,10 @@ static void ConvertMDLCommand(uint8 &cmd, uint8 &param)
 			break;
 		case 0x4: // Vibrato Waveform
 			param = 0x30 | (param & 0x0F);
+			break;
+		case 0x5:  // Set Finetune
+			cmd = CMD_FINETUNE;
+			param = (param << 4) ^ 0x80;
 			break;
 		case 0x6: // Pattern Loop
 			param = 0xB0 | (param & 0x0F);
@@ -322,16 +324,32 @@ static bool ImportMDLCommands(ModCommand &m, uint8 vol, uint8 e1, uint8 e2, uint
 
 	What's more is, if there's another effect in the second column, it's ALSO processed in addition to the
 	offset, and the second data byte is shared between the two effects. */
+	uint32 offset = uint32_max;
+	uint8 otherCmd = CMD_NONE;
 	if(e1 == CMD_OFFSET)
 	{
 		// EFy -xx => offset yxx00
+		offset = ((p1 & 0x0F) << 8) | p2;
 		p1 = (p1 & 0x0F) ? 0xFF : p2;
 		if(e2 == CMD_OFFSET)
 			e2 = CMD_NONE;
+		else
+			otherCmd = e2;
 	} else if (e2 == CMD_OFFSET)
 	{
-		// --- EFy => offset y0000 (best we can do without doing a ton of extra work is 0xff00)
+		// --- EFy => offset y0000
+		offset = (p2 & 0x0F) << 8;
 		p2 = (p2 & 0x0F) ? 0xFF : 0;
+		otherCmd = e1;
+	}
+
+	if(offset != uint32_max && offset > 0xFF && ModCommand::GetEffectWeight(otherCmd) < ModCommand::GetEffectWeight(CMD_OFFSET))
+	{
+		m.command = CMD_OFFSET;
+		m.param = static_cast<ModCommand::PARAM>(offset & 0xFF);
+		m.volcmd = VOLCMD_OFFSET;
+		m.vol = static_cast<ModCommand::VOL>(offset >> 8);
+		return otherCmd != CMD_NONE || vol != 0;
 	}
 
 	if(vol)
@@ -361,7 +379,7 @@ static bool ImportMDLCommands(ModCommand &m, uint8 vol, uint8 e1, uint8 e2, uint
 		e1 = CMD_NONE;
 	} else if(!vol)
 	{
-		lostCommand |= !ModCommand::TwoRegularCommandsToMPT(e1, p1, e2, p2);
+		lostCommand |= (ModCommand::TwoRegularCommandsToMPT(e1, p1, e2, p2).first != CMD_NONE);
 		m.volcmd = e1;
 		m.vol = p1;
 	} else
@@ -463,6 +481,7 @@ bool CSoundFile::ReadMDL(FileReader &file, ModLoadingFlags loadFlags)
 	InitializeGlobals(MOD_TYPE_MDL);
 	m_SongFlags = SONG_ITCOMPATGXX;
 	m_playBehaviour.set(kPerChannelGlobalVolSlide);
+	m_playBehaviour.set(kApplyOffsetWithoutNote);
 	m_playBehaviour.reset(kITVibratoTremoloPanbrello);
 	m_playBehaviour.reset(kITSCxStopsSample);	// Gate effect in underbeat.mdl
 
@@ -521,6 +540,7 @@ bool CSoundFile::ReadMDL(FileReader &file, ModLoadingFlags loadFlags)
 
 			ModSample &sample = Samples[sampleIndex];
 			sample.Initialize();
+			sample.Set16BitCuePoints();
 
 			chunk.ReadString<mpt::String::spacePadded>(m_szNames[sampleIndex], 32);
 			chunk.ReadString<mpt::String::spacePadded>(sample.filename, 8);
@@ -635,8 +655,13 @@ bool CSoundFile::ReadMDL(FileReader &file, ModLoadingFlags loadFlags)
 				mptSmp.nPan = std::min(static_cast<uint16>(sampleHeader.panning * 2), uint16(254));
 				mptSmp.nVibType = MDLVibratoType[sampleHeader.vibType & 3];
 				mptSmp.nVibSweep = sampleHeader.vibSweep;
-				mptSmp.nVibDepth = sampleHeader.vibDepth;
+				mptSmp.nVibDepth = (sampleHeader.vibDepth + 3u) / 4u;
 				mptSmp.nVibRate = sampleHeader.vibSpeed;
+				// Convert to IT-like vibrato sweep
+				if(mptSmp.nVibSweep != 0)
+					mptSmp.nVibSweep = mpt::saturate_cast<decltype(mptSmp.nVibSweep)>(Util::muldivr_unsigned(mptSmp.nVibDepth, 256, mptSmp.nVibSweep));
+				else
+					mptSmp.nVibSweep = 255;
 				if(sampleHeader.panEnvFlags & 0x40)
 					mptSmp.uFlags.set(CHN_PANNING);
 			}
@@ -674,7 +699,7 @@ bool CSoundFile::ReadMDL(FileReader &file, ModLoadingFlags loadFlags)
 			}
 			for(CHANNELINDEX chn = 0; chn < numChans; chn++)
 			{
-				if(chunk.ReadUint16LE() > 0 && chn >= m_nChannels)
+				if(chunk.ReadUint16LE() > 0 && chn >= m_nChannels && chn < 32)
 					m_nChannels = chn + 1;
 			}
 		}

@@ -21,6 +21,13 @@ OPL::OPL(uint32 samplerate)
 }
 
 
+OPL::OPL(IRegisterLogger &logger)
+	: m_logger{&logger}
+{
+	Initialize(OPL_BASERATE);
+}
+
+
 OPL::~OPL()
 {
 	// This destructor is put here so that we can forward-declare the Opal emulator class.
@@ -43,7 +50,7 @@ void OPL::Mix(int32 *target, size_t count, uint32 volumeFactorQ16)
 		return;
 
 	// This factor causes a sample voice to be more or less as loud as an OPL voice
-	const int32 factor = (volumeFactorQ16 * 6169) / (1 << 16);
+	const int32 factor = Util::muldiv_unsigned(volumeFactorQ16, 6169, (1 << 16));
 	while(count--)
 	{
 		int16 l, r;
@@ -67,7 +74,7 @@ uint16 OPL::ChannelToRegister(uint8 oplCh)
 // Translate a channel's first operator address into a register
 uint16 OPL::OperatorToRegister(uint8 oplCh)
 {
-	static const uint8 OPLChannelToOperator[] = { 0, 1, 2, 8, 9, 10, 16, 17, 18 };
+	static constexpr uint8 OPLChannelToOperator[] = { 0, 1, 2, 8, 9, 10, 16, 17, 18 };
 	if(oplCh < 9)
 		return OPLChannelToOperator[oplCh];
 	else
@@ -77,33 +84,49 @@ uint16 OPL::OperatorToRegister(uint8 oplCh)
 
 uint8 OPL::GetVoice(CHANNELINDEX c) const
 {
-	return m_ChanToOPL[c];
+	if((m_ChanToOPL[c] & OPL_CHANNEL_CUT) || m_ChanToOPL[c] == OPL_CHANNEL_INVALID)
+		return OPL_CHANNEL_INVALID;
+	return m_ChanToOPL[c] & OPL_CHANNEL_MASK;
 }
 
 
 uint8 OPL::AllocateVoice(CHANNELINDEX c)
 {
 	// Can we re-use a previous channel?
-	if(m_ChanToOPL[c] != OPL_CHANNEL_INVALID)
+	if(auto oplCh = m_ChanToOPL[c]; oplCh != OPL_CHANNEL_INVALID)
 	{
-		return GetVoice(c);
+		if(!(m_ChanToOPL[c] & OPL_CHANNEL_CUT))
+			return oplCh;
+		// Check re-use hint
+		oplCh &= OPL_CHANNEL_MASK;
+		if(m_OPLtoChan[oplCh] == CHANNELINDEX_INVALID || m_OPLtoChan[oplCh] == c)
+		{
+			m_OPLtoChan[oplCh] = c;
+			m_ChanToOPL[c] = oplCh;
+			return oplCh;
+		}
 	}
 	// Search for unused channel or channel with released note
-	uint8 releasedChn = OPL_CHANNEL_INVALID;
+	uint8 releasedChn = OPL_CHANNEL_INVALID, releasedCutChn = OPL_CHANNEL_INVALID;
 	for(uint8 oplCh = 0; oplCh < OPL_CHANNELS; oplCh++)
 	{
 		if(m_OPLtoChan[oplCh] == CHANNELINDEX_INVALID)
 		{
 			m_OPLtoChan[oplCh] = c;
 			m_ChanToOPL[c] = oplCh;
-			return GetVoice(c);
+			return oplCh;
 		} else if(!(m_KeyOnBlock[oplCh] & KEYON_BIT))
 		{
 			releasedChn = oplCh;
+			if(m_ChanToOPL[m_OPLtoChan[oplCh]] & OPL_CHANNEL_CUT)
+				releasedCutChn = oplCh;
 		}
 	}
 	if(releasedChn != OPL_CHANNEL_INVALID)
 	{
+		// Prefer channel that has been marked as cut over channel that has just been released
+		if(releasedCutChn != OPL_CHANNEL_INVALID)
+			releasedChn = releasedCutChn;
 		m_ChanToOPL[m_OPLtoChan[releasedChn]] = OPL_CHANNEL_INVALID;
 		m_OPLtoChan[releasedChn] = c;
 		m_ChanToOPL[c] = releasedChn;
@@ -114,7 +137,7 @@ uint8 OPL::AllocateVoice(CHANNELINDEX c)
 
 void OPL::MoveChannel(CHANNELINDEX from, CHANNELINDEX to)
 {
-	uint8 oplCh = m_ChanToOPL[from];
+	uint8 oplCh = GetVoice(from);
 	if(oplCh == OPL_CHANNEL_INVALID)
 		return;
 	m_OPLtoChan[oplCh] = to;
@@ -129,14 +152,22 @@ void OPL::NoteOff(CHANNELINDEX c)
 	if(oplCh == OPL_CHANNEL_INVALID || m_opl == nullptr)
 		return;
 	m_KeyOnBlock[oplCh] &= ~KEYON_BIT;
-	m_opl->Port(KEYON_BLOCK | ChannelToRegister(oplCh), m_KeyOnBlock[oplCh]);
+	Port(c, KEYON_BLOCK | ChannelToRegister(oplCh), m_KeyOnBlock[oplCh]);
 }
 
 
-void OPL::NoteCut(CHANNELINDEX c)
+void OPL::NoteCut(CHANNELINDEX c, bool unassign)
 {
+	uint8 oplCh = GetVoice(c);
+	if(oplCh == OPL_CHANNEL_INVALID)
+		return;
 	NoteOff(c);
-	Volume(c, 0, false);
+	Volume(c, 0, false);  // Note that a volume of 0 is not complete silence; the release portion of the sound will still be heard at -48dB
+	if(unassign)
+	{
+		m_OPLtoChan[oplCh] = CHANNELINDEX_INVALID;
+		m_ChanToOPL[c] |= OPL_CHANNEL_CUT;
+	}
 }
 
 
@@ -172,9 +203,9 @@ void OPL::Frequency(CHANNELINDEX c, uint32 milliHertz, bool keyOff, bool beating
 	fnum |= (block << 10);
 
 	uint16 channel = ChannelToRegister(oplCh);
-	m_KeyOnBlock[oplCh] = (keyOff ? 0 : KEYON_BIT) | (fnum >> 8); // Key on bit + Octave (block) + F-number high 2 bits
-	m_opl->Port(FNUM_LOW    | channel, fnum & 0xFF);              // F-Number low 8 bits
-	m_opl->Port(KEYON_BLOCK | channel, m_KeyOnBlock[oplCh]);
+	m_KeyOnBlock[oplCh] = (keyOff ? 0 : KEYON_BIT) | (fnum >> 8);  // Key on bit + Octave (block) + F-number high 2 bits
+	Port(c, FNUM_LOW    | channel, fnum & 0xFF);                   // F-Number low 8 bits
+	Port(c, KEYON_BLOCK | channel, m_KeyOnBlock[oplCh]);
 
 	m_isActive = true;
 }
@@ -201,11 +232,11 @@ void OPL::Volume(CHANNELINDEX c, uint8 vol, bool applyToModulator)
 	if((patch[10] & CONNECTION_BIT) || applyToModulator)
 	{
 		// Set volume of both operators in additive mode
-		m_opl->Port(KSL_LEVEL + modulator, CalcVolume(vol, patch[2]));
+		Port(c, KSL_LEVEL + modulator, CalcVolume(vol, patch[2]));
 	}
 	if(!applyToModulator)
 	{
-		m_opl->Port(KSL_LEVEL + carrier, CalcVolume(vol, patch[3]));
+		Port(c, KSL_LEVEL + carrier, CalcVolume(vol, patch[3]));
 	}
 }
 
@@ -226,7 +257,7 @@ int8 OPL::Pan(CHANNELINDEX c, int32 pan)
 	if(pan >= 85)
 		fbConn |= VOICE_TO_RIGHT;
 
-	m_opl->Port(FEEDBACK_CONNECTION | ChannelToRegister(oplCh), fbConn);
+	Port(c, FEEDBACK_CONNECTION | ChannelToRegister(oplCh), fbConn);
 	return ((fbConn & VOICE_TO_LEFT) ? -1 : 0) + ((fbConn & VOICE_TO_RIGHT) ? 1 : 0);
 }
 
@@ -243,14 +274,14 @@ void OPL::Patch(CHANNELINDEX c, const OPLPatch &patch)
 	for(uint8 op = 0; op < 2; op++)
 	{
 		const auto opReg = op ? carrier : modulator;
-		m_opl->Port(AM_VIB          | opReg, patch[0 + op]);
-		m_opl->Port(KSL_LEVEL       | opReg, patch[2 + op]);
-		m_opl->Port(ATTACK_DECAY    | opReg, patch[4 + op]);
-		m_opl->Port(SUSTAIN_RELEASE | opReg, patch[6 + op]);
-		m_opl->Port(WAVE_SELECT     | opReg, patch[8 + op]);
+		Port(c, AM_VIB          | opReg, patch[0 + op]);
+		Port(c, KSL_LEVEL       | opReg, patch[2 + op]);
+		Port(c, ATTACK_DECAY    | opReg, patch[4 + op]);
+		Port(c, SUSTAIN_RELEASE | opReg, patch[6 + op]);
+		Port(c, WAVE_SELECT     | opReg, patch[8 + op]);
 	}
 
-	m_opl->Port(FEEDBACK_CONNECTION | ChannelToRegister(oplCh), patch[10]);
+	Port(c, FEEDBACK_CONNECTION | ChannelToRegister(oplCh), patch[10]);
 }
 
 
@@ -268,6 +299,47 @@ void OPL::Reset()
 	m_KeyOnBlock.fill(0);
 	m_OPLtoChan.fill(CHANNELINDEX_INVALID);
 	m_ChanToOPL.fill(OPL_CHANNEL_INVALID);
+
+	Port(CHANNELINDEX_INVALID, 0x105, 1);  // Enable OPL3
+	Port(CHANNELINDEX_INVALID, 0x104, 0);  // No 4-op voices
 }
+
+
+void OPL::Port(CHANNELINDEX c, uint16 reg, uint8 value)
+{
+	if(!m_logger)
+		m_opl->Port(reg, value);
+	else
+		m_logger->Port(c, reg, value);
+}
+
+
+std::vector<uint16> OPL::AllVoiceRegisters()
+{
+	static constexpr uint8 opRegisters[] = {OPL::AM_VIB, OPL::KSL_LEVEL, OPL::ATTACK_DECAY, OPL::SUSTAIN_RELEASE, OPL::WAVE_SELECT};
+	static constexpr uint8 chnRegisters[] = {OPL::FNUM_LOW, OPL::KEYON_BLOCK, OPL::FEEDBACK_CONNECTION};
+	std::vector<uint16> result;
+	result.reserve(234);
+	for(uint16 chip = 0; chip < 2; chip++)
+	{
+		for(uint8 opReg : opRegisters)
+		{
+			for(uint8 op = 0; op < 22; op++)
+			{
+				if((op & 7) < 6)
+					result.push_back((chip << 8) | opReg | op);
+			}
+		}
+		for(uint8 chnReg : chnRegisters)
+		{
+			for(uint8 chn = 0; chn < 9; chn++)
+			{
+				result.push_back((chip << 8) | chnReg | chn);
+			}
+		}
+	}
+	return result;
+}
+
 
 OPENMPT_NAMESPACE_END

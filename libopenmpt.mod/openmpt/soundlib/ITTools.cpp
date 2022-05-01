@@ -77,18 +77,15 @@ void ITEnvelope::ConvertToMPT(InstrumentEnvelope &mptEnv, uint8 envOffset, uint8
 	{
 		mptEnv[ev].value = Clamp<int8, int8>(data[ev].value + envOffset, 0, 64);
 		mptEnv[ev].tick = data[ev].tick;
-		if(ev > 0 && ev < num && mptEnv[ev].tick < mptEnv[ev - 1].tick)
+		if(ev > 0 && mptEnv[ev].tick < mptEnv[ev - 1].tick && !(mptEnv[ev].tick & 0xFF00))
 		{
 			// Fix broken envelopes... Instruments 2 and 3 in NoGap.it by Werewolf have envelope points where the high byte of envelope nodes is missing.
-			// NoGap.it was saved with MPT 1.07 or MPT 1.09, which *normally* doesn't do this in IT files.
+			// NoGap.it was saved with MPT 1.07 - 1.09, which *normally* doesn't do this in IT files.
 			// However... It turns out that MPT 1.07 omitted the high byte of envelope nodes when saving an XI instrument file, and it looks like
 			// Instrument 2 and 3 in NoGap.it were loaded from XI files.
-			mptEnv[ev].tick &= 0xFF;
-			mptEnv[ev].tick |= (mptEnv[ev].tick & ~0xFF);
+			mptEnv[ev].tick |= mptEnv[ev - 1].tick & 0xFF00;
 			if(mptEnv[ev].tick < mptEnv[ev - 1].tick)
-			{
 				mptEnv[ev].tick += 0x100;
-			}
 		}
 	}
 }
@@ -184,9 +181,9 @@ uint32 ITInstrument::ConvertToIT(const ModInstrument &mptIns, bool compatExport,
 	rp = std::min(mptIns.nPanSwing, uint8(64));
 
 	// NNA Stuff
-	nna = mptIns.nNNA;
-	dct = (mptIns.nDCT < DCT_PLUGIN || !compatExport) ? mptIns.nDCT : DCT_NONE;
-	dca = mptIns.nDNA;
+	nna = static_cast<uint8>(mptIns.nNNA);
+	dct = static_cast<uint8>((mptIns.nDCT < DuplicateCheckType::Plugin || !compatExport) ? mptIns.nDCT : DuplicateCheckType::None);
+	dca = static_cast<uint8>(mptIns.nDNA);
 
 	// Pitch / Pan Separation
 	pps = mptIns.nPPS;
@@ -451,7 +448,7 @@ void ITSample::ConvertToIT(const ModSample &mptSmp, MODTYPE fromType, bool compr
 	if(mptSmp.uFlags[CHN_PANNING]) dfp |= ITSample::enablePanning;
 
 	// Sample Format / Loop Flags
-	if(mptSmp.HasSampleData())
+	if(mptSmp.HasSampleData() && !mptSmp.uFlags[CHN_ADLIB])
 	{
 		flags = ITSample::sampleDataPresent;
 		if(mptSmp.uFlags[CHN_LOOP]) flags |= ITSample::sampleLoop;
@@ -501,24 +498,27 @@ void ITSample::ConvertToIT(const ModSample &mptSmp, MODTYPE fromType, bool compr
 	if((vid | vis) != 0 && (fromType & MOD_TYPE_XM))
 	{
 		// Sweep is upside down in XM
-		vir = 255 - vir;
+		if(mptSmp.nVibSweep != 0)
+			vir = mpt::saturate_cast<decltype(vir)::base_type>(Util::muldivr_unsigned(mptSmp.nVibDepth, 256, mptSmp.nVibSweep));
+		else
+			vir = 255;
 	}
 
 	if(mptSmp.uFlags[CHN_ADLIB])
 	{
 		length = 12;
+		flags = ITSample::sampleDataPresent;
 		cvt = ITSample::cvtOPLInstrument;
 	} else if(mptSmp.uFlags[SMP_KEEPONDISK])
 	{
 #ifndef MPT_EXTERNAL_SAMPLES
-		MPT_UNREFERENCED_PARAMETER(allowExternal);
-#else
+		allowExternal = false;
+#endif  // MPT_EXTERNAL_SAMPLES
 		// Save external sample (filename at sample pointer)
 		if(allowExternal && mptSmp.HasSampleData())
 		{
 			cvt = ITSample::cvtExternalSample;
 		} else
-#endif // MPT_EXTERNAL_SAMPLES
 		{
 			length = loopbegin = loopend = susloopbegin = susloopend = 0;
 		}
@@ -535,6 +535,7 @@ uint32 ITSample::ConvertToMPT(ModSample &mptSmp) const
 	}
 
 	mptSmp.Initialize(MOD_TYPE_IT);
+	mptSmp.SetDefaultCuePoints();  // For old IT/MPTM files
 	mptSmp.filename = mpt::String::ReadBuf(mpt::String::nullTerminated, filename);
 
 	// Volume / Panning
@@ -672,9 +673,9 @@ uint32 DecodeITEditTimer(uint16 cwtv, uint32 editTime)
 	if((cwtv & 0xFFF) >= 0x0208)
 	{
 		editTime ^= 0x4954524B;  // 'ITRK'
-		editTime = (editTime >> 7) | (editTime << (32 - 7));
-		editTime = -(int32)editTime;
-		editTime = (editTime << 4) | (editTime >> (32 - 4));
+		editTime = mpt::rotr(editTime, 7);
+		editTime = ~editTime + 1;
+		editTime = mpt::rotl(editTime, 4);
 		editTime ^= 0x4A54484C;  // 'JTHL'
 	}
 	return editTime;
