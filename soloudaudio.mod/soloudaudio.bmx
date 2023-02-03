@@ -27,10 +27,12 @@ about: Provides Soloud driver for use with the BRL.Audio module.
 End Rem
 Module Audio.soloudaudio
 
-ModuleInfo "Version: 1.02"
+ModuleInfo "Version: 1.03"
 ModuleInfo "License: zlib/libpng"
-ModuleInfo "Copyright: 2016-2022 Bruce A Henderson"
+ModuleInfo "Copyright: 2016-2023 Bruce A Henderson"
 
+ModuleInfo "History: 1.03"
+ModuleInfo "History: Added support for Sfxr loading (.sfxr) and generation (preset, seed)."
 ModuleInfo "History: 1.02"
 ModuleInfo "History: Fixed loader priority ordering."
 ModuleInfo "History: 1.01"
@@ -193,6 +195,17 @@ Type TSoloudSound Extends TSound
 
 		Local stream:TStream
 		If String(url) Then
+			'sfxr also allows a "long key" to store the preset/seed setup
+			If loopFlag & SOLOUD_SOUND_SFXR And String(Long(String(url))) = String(url) Then
+				'unpack preset/effect from url
+				Local key:Long = Long(String(url))
+				Local preset:Int = (key Shr 32) & $FFFFFFFF
+				Local seed:Int = key & $FFFFFFFF
+				sfxr_loadPreset( this._sound.asPtr, preset, seed )
+				
+				Return this
+			EndIf
+
 			stream = ReadStream(url)
 			If Not stream Then
 				Return Null
@@ -391,6 +404,7 @@ Public
 New TSoloudWavLoader(5)
 New TSoloudMonotoneLoader(10)
 New TSoloudAyLoader(15)
+New TSoloudSfxrLoader(20)
 
 Rem
 bbdoc: 
@@ -475,3 +489,26 @@ Type TSoloudAyLoader Extends TAudioSourceLoader
 	End Method
 	
 End Type
+
+Type TSoloudSfxrLoader Extends TAudioSourceLoader
+
+	Method LoadAudioSource:TSLLoadableAudioSource( stream:TStream, flags:Int )
+		Local sound:TSLLoadableAudioSource = New TSLSfxr
+		If sound.loadStream(stream) = SO_NO_ERROR Then
+			Return sound
+		End If
+		sound.destroy()
+	End Method
+	
+End Type
+
+
+Function GenerateSfxrUrl:String(preset:Int, seed:Int)
+	Local key:Long = Long(preset) shl 32 | Long(seed)
+	Return string(key)
+End Function
+
+
+Function LoadSfxrSound:TSound(preset:Int, seed:Int, flags:Int = 0)
+	Return TSoloudSound.Load( GenerateSfxrUrl(preset, seed), flags | SOLOUD_SOUND_SFXR )
+End Function
