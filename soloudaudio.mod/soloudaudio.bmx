@@ -227,19 +227,24 @@ Type TSoloudSound Extends TSound
 	End Function
 	
 	Function TryLoadSound:TSLLoadableAudioSource(stream:TStream, flags:Int)
+		If Not stream Then Return Null
+
 		Local sound:TSLLoadableAudioSource
+		Local loader:TAudioSourceLoader = audio_loaders
+
+		Local pos:Int = stream.Pos()
 		
-		While audio_loaders
-			sound = audio_loaders.LoadAudioSource(stream, flags)
-			If sound Then
-				Return sound
-			End If
+		While loader
+			'reset to initial position for each loader attempt
+			stream.Seek(pos)
 			
-			audio_loaders = audio_loaders._succ
+			sound = loader.LoadAudioSource(stream, flags)
+			If sound Then Exit
+			
+			loader = loader._succ
 		Wend
 		
 		Return sound
-		
 	End Function
 	
 End Type
