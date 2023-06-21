@@ -36,6 +36,10 @@ extern "C"
 	double openmpt_module_get_duration_seconds(void* mod);
 }
 
+static void dummy_log( const char * message, void * user )
+{
+}
+
 namespace SoLoud
 {
 	OpenmptInstance::OpenmptInstance(Openmpt *aParent)
@@ -116,7 +120,7 @@ namespace SoLoud
 		}
 		aFile->read((unsigned char*)mData, mDataLen);
 
-		void *mpf = openmpt_module_create_from_memory((const void*)mData, mDataLen, NULL, NULL, NULL);
+		void *mpf = openmpt_module_create_from_memory((const void*)mData, mDataLen, (void*)dummy_log, NULL, NULL);
 		if (!mpf)
 		{
 			delete[] mData;
