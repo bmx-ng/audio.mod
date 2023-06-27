@@ -43,7 +43,7 @@ New TDefaultSoloudAudioDriver
 
 Type TWASAPISoloudAudioDriver Extends TMiniAudioSoloudAudioDriver
 
-	Method Name$()
+	Method Name:String()
 		Return "SoLoud::WASAPI"
 	End Method
 
@@ -56,7 +56,7 @@ End Type
 
 Type TDirectSoundSoloudAudioDriver Extends TMiniAudioSoloudAudioDriver
 
-	Method Name$()
+	Method Name:String()
 		Return "SoLoud::DirectSound"
 	End Method
 
@@ -69,7 +69,7 @@ End Type
 
 Type TWinmMMSoloudAudioDriver Extends TMiniAudioSoloudAudioDriver
 
-	Method Name$()
+	Method Name:String()
 		Return "SoLoud::WinMM"
 	End Method
 
@@ -82,7 +82,7 @@ End Type
 
 Type TDefaultSoloudAudioDriver Extends TDirectSoundSoloudAudioDriver
 
-	Method Name$()
+	Method Name:String()
 		Return "SoLoud"
 	End Method
 
@@ -95,7 +95,7 @@ New TDefaultSoloudAudioDriver
 
 Type TALSASoloudAudioDriver Extends TMiniAudioSoloudAudioDriver
 
-	Method Name$()
+	Method Name:String()
 		Return "SoLoud::ALSA"
 	End Method
 
@@ -108,7 +108,7 @@ End Type
 
 Type TPulseAudioSoloudAudioDriver Extends TMiniAudioSoloudAudioDriver
 
-	Method Name$()
+	Method Name:String()
 		Return "SoLoud::PulseAudio"
 	End Method
 
@@ -121,7 +121,7 @@ End Type
 
 Type TJACKSoloudAudioDriver Extends TMiniAudioSoloudAudioDriver
 
-	Method Name$()
+	Method Name:String()
 		Return "SoLoud::JACK"
 	End Method
 
@@ -134,7 +134,7 @@ End Type
 
 Type TDefaultSoloudAudioDriver Extends TPulseAudioSoloudAudioDriver
 
-	Method Name$()
+	Method Name:String()
 		Return "SoLoud"
 	End Method
 
@@ -145,7 +145,7 @@ New TDefaultSoloudAudioDriver
 
 Type TCoreAudioSoloudAudioDriver Extends TMiniAudioSoloudAudioDriver
 
-	Method Name$()
+	Method Name:String()
 		Return "SoLoud::CoreAudio"
 	End Method
 
@@ -158,7 +158,7 @@ End Type
 
 Type TDefaultSoloudAudioDriver Extends TCoreAudioSoloudAudioDriver
 
-	Method Name$()
+	Method Name:String()
 		Return "SoLoud"
 	End Method
 

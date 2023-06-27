@@ -65,7 +65,7 @@ Type TSoloudAudioDriver Extends TAudioDriver
 
 	Field _soloud:TSoloud
 
-	Method Name$()
+	Method Name:String()
 		Return "SoLoud"
 	End Method
 	
