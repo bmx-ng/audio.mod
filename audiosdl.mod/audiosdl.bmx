@@ -42,7 +42,7 @@ New TDefaultSoloudAudioDriver
 
 Type TDirectSoundSoloudAudioDriver Extends TSDLSoloudAudioDriver
 
-	Method Name$() Override
+	Method Name:String() Override
 		Return "SoLoud::DirectSound"
 	End Method
 
@@ -55,7 +55,7 @@ End Type
 
 Type TWinmMMSoloudAudioDriver Extends TSDLSoloudAudioDriver
 
-	Method Name$() Override
+	Method Name:String() Override
 		Return "SoLoud::WinMM"
 	End Method
 
@@ -68,7 +68,7 @@ End Type
 
 Type TDefaultSoloudAudioDriver Extends TDirectSoundSoloudAudioDriver
 
-	Method Name$() Override
+	Method Name:String() Override
 		Return "SoLoud"
 	End Method
 
@@ -82,7 +82,7 @@ New TDefaultSoloudAudioDriver
 
 Type TALSASoloudAudioDriver Extends TSDLSoloudAudioDriver
 
-	Method Name$() Override
+	Method Name:String() Override
 		Return "SoLoud::ALSA"
 	End Method
 
@@ -95,7 +95,7 @@ End Type
 
 Type TPulseAudioSoloudAudioDriver Extends TSDLSoloudAudioDriver
 
-	Method Name$() Override
+	Method Name:String() Override
 		Return "SoLoud::PulseAudio"
 	End Method
 
@@ -108,7 +108,7 @@ End Type
 
 Type TOSSSoloudAudioDriver Extends TSDLSoloudAudioDriver
 
-	Method Name$() Override
+	Method Name:String() Override
 		Return "SoLoud::OSS"
 	End Method
 
@@ -121,7 +121,7 @@ End Type
 
 Type TNASSoloudAudioDriver Extends TSDLSoloudAudioDriver
 
-	Method Name$() Override
+	Method Name:String() Override
 		Return "SoLoud::NAS"
 	End Method
 
@@ -134,7 +134,7 @@ End Type
 
 Type TDefaultSoloudAudioDriver Extends TPulseAudioSoloudAudioDriver
 
-	Method Name$() Override
+	Method Name:String() Override
 		Return "SoLoud"
 	End Method
 
@@ -145,7 +145,7 @@ New TDefaultSoloudAudioDriver
 
 Type TCoreAudioSoloudAudioDriver Extends TSDLSoloudAudioDriver
 
-	Method Name$() Override
+	Method Name:String() Override
 		Return "SoLoud::CoreAudio"
 	End Method
 
@@ -158,7 +158,7 @@ End Type
 
 Type TDefaultSoloudAudioDriver Extends TCoreAudioSoloudAudioDriver
 
-	Method Name$() Override
+	Method Name:String() Override
 		Return "SoLoud"
 	End Method
 
@@ -169,7 +169,7 @@ New TDefaultSoloudAudioDriver
 
 Type THaikuSoloudAudioDriver Extends TSDLSoloudAudioDriver
 
-	Method Name$() Override
+	Method Name:String() Override
 		Return "SoLoud::Haiku"
 	End Method
 
@@ -182,7 +182,7 @@ End Type
 
 Type TDefaultSoloudAudioDriver Extends THaikuSoloudAudioDriver
 
-	Method Name$() Override
+	Method Name:String() Override
 		Return "SoLoud"
 	End Method
 
