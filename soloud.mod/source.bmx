@@ -143,3 +143,5 @@ Import "soloud/src/audiosource/wav/stb_vorbis.c"
 
 Import "glue.cpp"
 
+Import "dataqueue/*.h"
+Import "dataqueue/dataqueue.c"

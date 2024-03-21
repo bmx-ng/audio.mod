@@ -1681,3 +1681,137 @@ End Type
 Type TSLFilter
 End Type
 
+
+Rem
+bbdoc: Audio source for playing audio from a dynamic buffer.
+End Rem
+Type TSLQueued Extends TSLAudioSource
+
+	Method New()
+		asPtr = bmx_soloud_queued_create()
+	End Method
+	
+	Rem
+	bbdoc: Writes @size bytes of audio data to the queue.
+	End Rem
+	Method writeData(data:Byte Ptr, size:Size_T)
+		bmx_soloud_queued_write(asPtr, data, size)
+	End Method
+
+	Rem
+	bbdoc: Returns the number of bytes queued up and ready to play.
+	End Rem
+	Method size:Size_T()
+		Return bmx_soloud_queued_count(asPtr)
+	End Method
+
+	Rem
+	bbdoc: Sets default volume for instances.
+	End Rem
+	Method setVolume(volume:Float) Override
+		bmx_soloud_queued_setVolume(asPtr, volume)
+	End Method
+	
+	Rem
+	bbdoc: Sets the looping of the instances created from this audio source.
+	End Rem
+	Method setLooping(loop:Int) Override
+		bmx_soloud_queued_setLooping(asPtr, loop)
+	End Method
+
+	Rem
+	bbdoc: Sets whether audio should auto-stop when it ends or not.
+	End Rem
+	Method setAutoStop(autoStop:Int) Override
+		bmx_soloud_queued_setAutoStop(asPtr, autoStop)
+	End Method
+	
+	Rem
+	bbdoc: Sets the minimum and maximum distances for 3d audio source (closer to min distance = max vol)
+	End Rem
+	Method set3dMinMaxDistance(minDistance:Float, maxDistance:Float) Override
+	End Method
+	
+	Rem
+	bbdoc: Sets attenuation model and rolloff factor for 3d audio source.
+	End Rem
+	Method set3dAttenuation(attenuationModel:Int, attenuationRolloffFactor:Float) Override
+	End Method
+
+	Rem
+	bbdoc: Sets doppler factor to reduce or enhance doppler effect, default = 1.0
+	End Rem
+	Method set3dDopplerFactor(dopplerFactor:Float) Override
+	End Method
+
+	Rem
+	bbdoc: Enables 3d processing.
+	about: Implicitly set by play3d calls.
+	End Rem
+	Method set3dListenerRelative(listenerRelative:Int) Override
+	End Method
+
+	Rem
+	bbdoc: Sets the coordinates for this audio source to be relative to listener's coordinates.
+	End Rem
+	Method set3dDistanceDelay(distanceDelay:Int) Override
+	End Method
+
+	Rem
+	bbdoc: Enables delaying the start of the sound based on the distance.
+	End Rem
+	Method set3dCollider(collider:TSLAudioCollider) Override
+		' TODO
+	End Method
+
+	Rem
+	bbdoc: Sets a custom 3d audio collider.
+	about: Set to Null to disable.
+	End Rem
+	Method set3dColliderEx(collider:TSLAudioCollider, userData:Int) Override
+		' TODO
+	End Method
+
+	Rem
+	bbdoc: Sets a custom attenuator.
+	about: Set to Null to disable.
+	End Rem
+	Method set3dAttenuator(attenuator:TSLAudioAttenuator) Override
+		' TODO
+	End Method
+
+	Rem
+	bbdoc: Sets behavior for inaudible sounds.
+	End Rem
+	Method setInaudibleBehavior(mustTick:Int, kill:Int) Override
+'		Speech_setInaudibleBehavior(asPtr, mustTick, kill)
+	End Method
+
+	Rem
+	bbdoc: Sets filter.
+	about: Set to NULL to clear the filter.
+	End Rem
+	Method setFilter(filterId:Int, filter:TSLFilter) Override
+		' TODO
+	End Method
+
+	Rem
+	bbdoc: Stops all instances of this audio source.
+	End Rem
+	Method stop() Override
+		bmx_soloud_queued_stop(asPtr)
+	End Method
+
+
+	Method destroy() Override
+		If asPtr Then
+			bmx_soloud_queued_destroy(asPtr)
+			asPtr = Null
+		End If
+	End Method
+
+	Method Delete()
+		destroy()
+	End Method
+	
+End Type
