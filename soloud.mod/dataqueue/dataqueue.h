@@ -24,6 +24,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+#if __STDC_VERSION__ >= 199901L
+    #include <stdint.h>
+#else
+    typedef unsigned char uint8_t;
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
