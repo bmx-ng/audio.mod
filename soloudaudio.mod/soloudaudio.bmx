@@ -57,6 +57,7 @@ Const SOLOUD_SOUND_MONOTONE:Int =  $00010000
 Const SOLOUD_SOUND_TEDSID:Int =    $00020000
 Const SOLOUD_SOUND_SPEECH:Int =    $00040000
 Const SOLOUD_SOUND_AY:Int =        $00080000
+Const SOLOUD_SOUND_QUEUED:Int =    $00800000
 
 Const SOLOUD_SOUND_PAUSE_INAUDIBLE:Int = $10000000
 Const SOLOUD_SOUND_PROTECT:Int = $20000000
@@ -154,6 +155,17 @@ Type TSoloudSound Extends TSound
 			Local this:TSoloudSound = New TSoloudSound
 			this._sound = New TSLSpeech
 			TSLSpeech(this._sound).SetText(String(url))
+
+			If loopFlag & SOUND_LOOP Then
+				this.isLooped = True
+			End If
+
+			Return this
+		End If
+
+		If loopFlag & SOLOUD_SOUND_QUEUED Then
+			Local this:TSoloudSound = New TSoloudSound
+			this._sound = New TSLQueued
 
 			If loopFlag & SOUND_LOOP Then
 				this.isLooped = True

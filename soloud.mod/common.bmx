@@ -373,6 +373,15 @@ Extern
 	Function bmx_soloud_streamfile_new:Byte Ptr(obj:Object)
 	Function bmx_soloud_streamfile_free(handle:Byte Ptr)
 	
+	Function bmx_soloud_queued_create:Byte Ptr()
+	Function bmx_soloud_queued_write(aQd:Byte Ptr, buffer:Byte Ptr, size:Size_T)
+	Function bmx_soloud_queued_destroy(aQd:Byte Ptr)
+	Function bmx_soloud_queued_stop(aQd:Byte Ptr)
+	Function bmx_soloud_queued_setVolume(aQd:Byte Ptr, aVolume:Float)
+	Function bmx_soloud_queued_setLooping(aQd:Byte Ptr, aLoop:Int)
+	Function bmx_soloud_queued_setAutoStop(aQd:Byte Ptr, aAutoStop:Int)
+	Function bmx_soloud_queued_count:Size_T(aQd:Byte Ptr)
+
 End Extern
 
 
