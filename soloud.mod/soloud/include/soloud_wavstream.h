@@ -49,12 +49,12 @@ namespace SoLoud
 		WavStream *mParent;
 		unsigned int mOffset;
 		File *mFile;
-		union codec
+		struct codec
 		{
-			stb_vorbis *mOgg;
-			drflac *mFlac;
-			drmp3 *mMp3;
-			drwav *mWav;
+			stb_vorbis *mOgg = nullptr;
+			drflac *mFlac = nullptr;
+			drmp3 *mMp3 = nullptr;
+			drwav *mWav = nullptr;
 		} mCodec;
 		unsigned int mOggFrameSize;
 		unsigned int mOggFrameOffset;
