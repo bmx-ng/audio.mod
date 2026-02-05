@@ -173,6 +173,5 @@ double Openmpt_getLength(void * aClassPtr)
 	return cl->getLength();
 }
 
-
 } // extern "C"
 

@@ -1,4 +1,4 @@
-' Copyright (c) 2016-2022 Bruce A Henderson
+' Copyright (c) 2016-2026 Bruce A Henderson
 '
 ' This software is provided 'as-is', without any express or implied
 ' warranty. In no event will the authors be held liable for any damages
@@ -26,11 +26,13 @@ bbdoc: SoLoud audio.
 End Rem
 Module Audio.SoLoud
 
-ModuleInfo "Version: 1.04"
+ModuleInfo "Version: 1.05"
 ModuleInfo "License: zlib/libpng"
 ModuleInfo "Copyright: SoLoud - 2013-2022 Jari Komppa"
-ModuleInfo "Copyright: Wrapper - 2016-2022 Bruce A Henderson"
+ModuleInfo "Copyright: Wrapper - 2016-2026 Bruce A Henderson"
 
+ModuleInfo "History: 1.05"
+ModuleInfo "History: Update to woollybah/soloud.5ab94a2"
 ModuleInfo "History: 1.04"
 ModuleInfo "History: Update to woollybah/soloud.571fde0"
 ModuleInfo "History: 1.03"
