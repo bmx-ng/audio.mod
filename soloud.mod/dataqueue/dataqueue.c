@@ -67,7 +67,7 @@ data_queue * bmx_queue_new(const size_t _packetlen, const size_t initialslack) {
         queue->packet_size = packetlen;
 
         for (i = 0; i < wantpackets; i++) {
-            data_queue_packet *packet = (data_queue_packet *) malloc(sizeof (data_queue_packet) + packetlen);
+            data_queue_packet *packet = (data_queue_packet *) malloc(sizeof (data_queue_packet) + packetlen - 1);
             if (packet) { /* don't care if this fails, we'll deal later. */
                 packet->datalen = 0;
                 packet->startpos = 0;
@@ -84,7 +84,7 @@ void bmx_queue_free(data_queue *queue) {
     if (queue) {
         bmx_queue_list_free(queue->head);
         bmx_queue_list_free(queue->pool);
-        bmx_queue_free(queue);
+        free(queue);
     }
 }
 
@@ -126,7 +126,7 @@ void bmx_queue_clear(data_queue *queue, const size_t slack) {
         queue->pool = 0;
     }
 
-    bmx_queue_free(packet);  /* free extra packets */
+    bmx_queue_list_free(packet);  /* free extra packets */
 }
 
 static data_queue_packet * bmx_queue_packet_allocate(data_queue *queue) {
@@ -138,7 +138,7 @@ static data_queue_packet * bmx_queue_packet_allocate(data_queue *queue) {
         queue->pool = packet->next;
     } else {
         /* Have to allocate a new one! */
-        packet = (data_queue_packet *) malloc(sizeof (data_queue_packet) + queue->packet_size);
+        packet = (data_queue_packet *) malloc(sizeof (data_queue_packet) + queue->packet_size - 1);
         if (packet == 0) {
             return 0;
         }
@@ -166,10 +166,15 @@ int bmx_queue_write(data_queue *queue, const void *_data, const size_t _len) {
     data_queue_packet *origtail;
     size_t origlen;
     size_t datalen;
+    data_queue_packet *origpool;
+    size_t orig_queued_bytes;
 
     if (!queue) {
         return 0;
     }
+
+    origpool= queue->pool;
+    orig_queued_bytes = queue->queued_bytes;
 
     orighead = queue->head;
     origtail = queue->tail;
@@ -192,7 +197,8 @@ int bmx_queue_write(data_queue *queue, const void *_data, const size_t _len) {
                 }
                 queue->head = orighead;
                 queue->tail = origtail;
-                queue->pool = 0;
+                queue->pool = origpool;
+                queue->queued_bytes = orig_queued_bytes;
 
                 bmx_queue_list_free(packet);  /* give back what we can. */
                 return -1;
@@ -255,6 +261,8 @@ size_t bmx_queue_read(data_queue *queue, void *_buf, const size_t _len) {
         if (packet->startpos == packet->datalen) {  /* packet is done, put it in the pool. */
             queue->head = packet->next;
 
+            packet->datalen = 0;
+            packet->startpos = 0;
             packet->next = queue->pool;
             queue->pool = packet;
         }
