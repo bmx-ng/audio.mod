@@ -4,6 +4,18 @@ The `Audio` modules provide a more comprehensive audio experience in BlitzMax th
 
 
 
+## Independent streaming decoders
+
+`Audio.Streams` supplies a backend-independent incremental decoder interface.
+Import `Audio.WavStream` for PCM WAV, `Audio.VorbisStream` for Ogg Vorbis,
+`Audio.FlacStream` for FLAC, or `Audio.Mp3Stream` for MP3. The
+SDL3 audio driver uses these providers for `LoadSound(url, SOUND_STREAM)`; they
+can also be used directly with `TStream` inputs. These modules do not depend on
+SoLoud or replace its existing streaming support. See the individual module
+READMEs for format support and ownership rules.
+
+## SoLoud audio framework
+
 The `Audio` framework is built on top of the open source [SoLoud](https://sol.gfxile.net/soloud/) audio engine, which itself integrates with various different audio formats and libraries.
 
 ## Supported Audio Formats
