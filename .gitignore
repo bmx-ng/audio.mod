@@ -6,3 +6,7 @@
 commands.html
 
 .DS_Store
+
+# Generated BMK build manifests and stamps
+*.bmxbuild
+*.bmxbuild.*
